@@ -1,0 +1,13 @@
+/*
+  SamfastNetworks Sidebar – Layout Tokens
+  ─────────────────────────────────────────────
+  All values reference your existing globals.css variables.
+  No hardcoded colours — everything inherits your light/dark theme.
+  Import once in globals.css:  @import "./styles/sidebar.css";
+*/
+
+:root {
+  --sidebar-expanded-w:  240px;
+  --sidebar-collapsed-w: 72px;
+  --sidebar-transition:  all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}

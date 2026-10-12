@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Django (Daphne)",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "${workspaceFolder}/backend/.venv/bin/python",
+            "program": "${workspaceFolder}/backend/.venv/bin/daphne",
+            "args": [
+                "-p", "8000",
+                "backend.asgi:application"
+            ],
+            "django": true,
+            "autoStartBrowser": false,
+            "cwd": "${workspaceFolder}/backend"
+        }
+    ]
+}

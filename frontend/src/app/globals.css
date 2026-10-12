@@ -1,0 +1,294 @@
+@import url("https://fonts.googleapis.com/css2?family=Jost:wght@400;500;700&display=swap");
+
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Jost", sans-serif;
+}
+
+/* Ensure the Google Places Autocomplete dropdown is always on top of the Dialog */
+.pac-container {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Add these missing status colors */
+  --color-error: var(--error);
+  --color-error-muted: var(--error-muted);
+  --color-error-foreground: var(--error-foreground);
+
+  --color-success: var(--success);
+  --color-success-muted: var(--success-muted);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-muted: var(--warning-muted);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --color-info: var(--info);
+  --color-info-muted: var(--info-muted);
+  --color-info-foreground: var(--info-foreground);
+
+  --color-neutral: var(--neutral);
+  --color-neutral-muted: var(--neutral-muted);
+  --color-neutral-background: var(--neutral-background);
+  --color-neutral-border: var(--neutral-border);
+  --color-white: var(--white);
+
+  /* Rest of your existing theme variables */
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+:root {
+  /* Base Radius */
+  --radius: 0.625rem;
+
+  /* Core UI Colors */
+  --background: #f9fafb;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+
+  /* Semantic Brand Colors */
+  --primary: #10b981;
+  --primary-muted: #d1fae5;
+  --primary-dark: #059669;
+  --primary-foreground: #ffffff;
+
+  --secondary: #374151;
+  --secondary-muted: #6b7280;
+  --secondary-foreground: #ffffff;
+
+  --accent: #111827;
+  --accent-muted: #f9fafb;
+  --accent-foreground: #ffffff;
+
+  /* Decision / Status Colors */
+  --success: #16a34a;
+  --success-muted: #16a34a33;
+  --success-foreground: #ffffff;
+
+  --warning: #f59e0b;
+  --warning-muted: #f59e0b33;
+  --warning-foreground: #111827;
+
+  --info: #2563eb;
+  --info-muted: #2563eb33;
+  --info-foreground: #ffffff;
+
+  --error: #dc2626;
+  --error-muted: #dc262633;
+  --error-foreground: #ffffff;
+
+  /* Neutral / Utility Colors */
+  --neutral: #111827;
+  --neutral-muted: #6b7280;
+  --neutral-background: #f9fafb;
+  --neutral-border: #e5e7eb;
+  --white: #ffffff;
+
+  /* Sidebar & Charts */
+  --sidebar: #f9fafb;
+  --sidebar-foreground: #111827;
+  --sidebar-primary: #10b981;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #374151;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #6b7280;
+
+  --chart-1: #f59e0b;
+  --chart-2: #2563eb;
+  --chart-3: #16a34a;
+  --chart-4: #dc2626;
+  --chart-5: #10b981;
+
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #6b7280;
+  --destructive: #dc2626;
+
+  /* Muted colors for skeleton */
+  --muted: #e5e7eb;
+  --muted-foreground: #6b7280;
+}
+
+/* Dark Theme */
+.dark {
+  --background: #111827;
+  --foreground: #ffffff;
+  --card: #111827;
+  --card-foreground: #ffffff;
+  --popover: #111827;
+  --popover-foreground: #ffffff;
+
+  --primary: #10b981;
+  --primary-muted: #064e3b;
+  --primary-dark: #34d399;
+  --primary-foreground: #ffffff;
+
+  --secondary: #6b7280;
+  --secondary-muted: #374151;
+  --secondary-foreground: #ffffff;
+
+  --accent: #ffffff;
+  --accent-muted: #6b7280;
+  --accent-foreground: #111827;
+
+  --success: #16a34a;
+  --success-muted: #16a34a33;
+  --success-foreground: #ffffff;
+
+  --warning: #f59e0b;
+  --warning-muted: #f59e0b33;
+  --warning-foreground: #111827;
+
+  --info: #2563eb;
+  --info-muted: #2563eb33;
+  --info-foreground: #ffffff;
+
+  --error: #dc2626;
+  --error-muted: #dc262633;
+  --error-foreground: #ffffff;
+
+  --neutral: #ffffff;
+  --neutral-muted: #6b7280;
+  --neutral-background: #111827;
+  --neutral-border: #374151;
+
+  --sidebar: #111827;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #10b981;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #374151;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #6b7280;
+  --sidebar-ring: #ffffff;
+
+  --border: #374151;
+  --input: #374151;
+  --ring: #6b7280;
+  --destructive: #dc2626;
+
+  /* Muted colors for skeleton */
+  --muted: #374151;
+  --muted-foreground: #9ca3af;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Placeholder styling */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--neutral-muted);
+    opacity: 0.6;
+    font-weight: 400;
+    font-size: 0.7rem;
+  }
+
+  /* Dark mode placeholder */
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: var(--neutral-muted);
+    opacity: 0.5;
+  }
+
+  /* Input text styling */
+  input,
+  textarea {
+    color: var(--foreground);
+    font-weight: 500;
+  }
+
+  /* Disabled input styling */
+  input:disabled,
+  textarea:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
+/* Skeleton override - this will fix the black skeleton issue */
+.bg-muted {
+  background-color: var(--muted) !important;
+}
+
+.bg-muted\/50 {
+  background-color: color-mix(
+    in srgb,
+    var(--muted) 50%,
+    transparent
+  ) !important;
+}
+
+/* Animation for skeleton */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
