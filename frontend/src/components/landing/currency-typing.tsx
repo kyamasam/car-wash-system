@@ -3,20 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 
 const currencies = [
-    { code: "KES", flag: "🇰🇪" },
-    { code: "TZS", flag: "🇹🇿" },
-    { code: "UGX", flag: "🇺🇬" },
-    { code: "RWF", flag: "🇷🇼" },
-    { code: "BIF", flag: "🇧🇮" },
-    { code: "ETB", flag: "🇪🇹" },
-    { code: "NGN", flag: "🇳🇬" },
-    { code: "GHS", flag: "🇬🇭" },
-    { code: "ZAR", flag: "🇿🇦" },
-    { code: "EGP", flag: "🇪🇬" },
-    { code: "MAD", flag: "🇲🇦" },
-    { code: "XOF", flag: "🌍" },
-    { code: "XAF", flag: "🌍" },
-    { code: "USD", flag: "🇺🇸" },
+    { code: "KES" },
+    { code: "TZS" },
+    { code: "UGX" },
+    { code: "RWF" },
+    { code: "BIF" },
+    { code: "ETB" },
+    { code: "NGN" },
+    { code: "GHS" },
+    { code: "ZAR" },
+    { code: "EGP" },
+    { code: "MAD" },
+    { code: "XOF" },
+    { code: "XAF" },
+    { code: "USD" },
 ];
 
 function splitGraphemes(value: string) {
@@ -36,7 +36,7 @@ export function CurrencyTyping() {
     const [charCount, setCharCount] = useState(0);
     const [deleting, setDeleting] = useState(false);
 
-    const fullText = `${currencies[index].flag} ${currencies[index].code}`;
+    const fullText = currencies[index].code;
 
     const characters = useMemo(() => splitGraphemes(fullText), [fullText]);
 

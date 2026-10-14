@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status
 
+from commons.mixins import BranchScopedMixin
 from users.models import User
 from users.permissions import AnonCreateAndUpdateOwnerOnly
 from users.serializers import (
@@ -28,21 +29,13 @@ class CustomObtainTokenPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(BranchScopedMixin, viewsets.ModelViewSet):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
     permission_classes = [AnonCreateAndUpdateOwnerOnly]
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ["username", "email"]
     filterset_fields = ["username"]
-
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_superuser:
-            return User.objects.all()
-        if user.branch_id:
-            return User.objects.filter(branch=user.branch)
-        return User.objects.filter(business=user.business)
 
     def get_serializer_class(self):
         if self.action == 'list' and not self.request.user.is_superuser:
@@ -68,7 +61,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="get-current-user", serializer_class=UserSerializer)
     def get_current_user(self, request):
-        user_obj = User.objects.prefetch_related("profile").get(pk=request.user.id)
+        user_obj = User.objects.get(pk=request.user.id)
         return Response(UserSerializer(user_obj, context={"request": request}).data)
 
     @extend_schema(

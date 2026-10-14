@@ -1,8 +1,9 @@
 from rest_framework.viewsets import ModelViewSet
 from drf_spectacular.utils import extend_schema_view, extend_schema
 
+from commons.mixins import BranchScopedMixin
 from jobs.models import Job, JobItem
-from jobs.serializers import JobSerializer, JobItemSerializer
+from jobs.serializers import JobSerializer, JobItemSerializer, JobCreateSerializer
 
 
 @extend_schema_view(
@@ -13,9 +14,13 @@ from jobs.serializers import JobSerializer, JobItemSerializer
     partial_update=extend_schema(tags=["jobs"]),
     destroy=extend_schema(tags=["jobs"]),
 )
-class JobViewSet(ModelViewSet):
+class JobViewSet(BranchScopedMixin, ModelViewSet):
     queryset = Job.objects.select_related("branch", "customer", "vehicle", "worker").prefetch_related("items").all()
-    serializer_class = JobSerializer
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return JobCreateSerializer
+        return JobSerializer
 
 
 @extend_schema_view(
@@ -26,6 +31,7 @@ class JobViewSet(ModelViewSet):
     partial_update=extend_schema(tags=["jobs"]),
     destroy=extend_schema(tags=["jobs"]),
 )
-class JobItemViewSet(ModelViewSet):
+class JobItemViewSet(BranchScopedMixin, ModelViewSet):
+    branch_lookup_field = "job__branch"
     queryset = JobItem.objects.select_related("job", "service").all()
     serializer_class = JobItemSerializer

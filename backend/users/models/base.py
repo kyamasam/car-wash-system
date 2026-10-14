@@ -1,12 +1,9 @@
-import os
 import uuid
-from datetime import datetime
 
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
-from django.utils.crypto import get_random_string
 
 from ..constants import UserRole
 from commons.models import UtilColumnsModel  # noqa: F401 - re-exported for backwards compat
@@ -91,20 +88,3 @@ class User(AbstractUser):
         return super().save(*args, **kwargs)
 
 
-def custom_profile_photo_upload_to(instance, file):
-    file_extension = os.path.splitext(str(file))[1]
-    random_string = get_random_string(length=6)
-    today = datetime.today()
-    date_str = today.strftime("%Y/%m/%d")
-    return f"profile_photo/{date_str}/{instance.user.id}_{random_string}{file_extension}"
-
-
-class Profile(UtilColumnsModel):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-    profile_photo = models.FileField(null=True, blank=True, upload_to=custom_profile_photo_upload_to)
-    tagline = models.CharField(max_length=400, null=True, blank=True)
-    description = models.TextField(max_length=5000, null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.user.get_full_name()}'s profile"

@@ -1,3 +1,3 @@
-from .base import User, Profile
+from .base import User
 
-__all__ = ["User", "Profile"]
+__all__ = ["User"]

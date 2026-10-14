@@ -31,4 +31,6 @@ export interface CurrentUser {
   profile: UserProfile;
   user_type: "CUSTOMER" | string;
   current_organization: CurrentOrgSummary | null;
+  branch: string | null;
+  business: string | null;
 }

@@ -11,6 +11,7 @@ class Service(UtilColumnsModel):
     code = models.CharField(max_length=30, unique=True)
     category = models.CharField(max_length=20, choices=ServiceCategory.choices)
     unit = models.CharField(max_length=20, choices=PricingUnit.choices, default=PricingUnit.PER_JOB)
+    icon = models.ImageField(upload_to="services/icons/", null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -24,9 +25,11 @@ class ServicePrice(models.Model):
         help_text="NULL applies to all branches"
     )
     vehicle_category = models.CharField(max_length=20, blank=True, null=True, help_text="NULL means any vehicle")
+    size_label = models.CharField(max_length=50, blank=True, null=True, help_text="e.g. Small, Medium, Large — for size-based services")
     price = models.DecimalField(max_digits=12, decimal_places=2)
     commission_value = models.DecimalField(max_digits=12, decimal_places=2)
     commission_type = models.CharField(max_length=20, choices=CommissionType.choices)
+    icon = models.ImageField(upload_to="services/price_icons/", null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="service_prices_created"
     )

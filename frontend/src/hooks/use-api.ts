@@ -355,4 +355,4 @@ export const useApiMutation = <TData, TVariables = unknown>({
   });
 };
 
-export { formatText, getSuccessMessage, parseDjangoErrors };
+export { axiosInstance, formatText, getSuccessMessage, parseDjangoErrors };

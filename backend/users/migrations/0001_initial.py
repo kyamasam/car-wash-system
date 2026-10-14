@@ -3,7 +3,6 @@
 import django.core.validators
 import django.db.models.deletion
 import django.utils.timezone
-import users.models.base
 import uuid
 from django.conf import settings
 from django.db import migrations, models
@@ -65,7 +64,7 @@ class Migration(migrations.Migration):
                 ('is_active', models.BooleanField(default=True)),
                 ('deleted_at', models.DateTimeField(blank=True, null=True)),
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('profile_photo', models.FileField(blank=True, null=True, upload_to=users.models.base.custom_profile_photo_upload_to)),
+                ('profile_photo', models.FileField(blank=True, null=True, upload_to='profile_photo/')),
                 ('tagline', models.CharField(blank=True, max_length=400, null=True)),
                 ('description', models.TextField(blank=True, max_length=5000, null=True)),
                 ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='profile', to=settings.AUTH_USER_MODEL)),

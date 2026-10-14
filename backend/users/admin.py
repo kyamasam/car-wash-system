@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from users.models import User, Profile
+from users.models import User
 
 
 @admin.register(User)
@@ -51,9 +51,3 @@ class CustomUserAdmin(UserAdmin):
         ),
     )
 
-
-@admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'tagline', 'created_at')
-    search_fields = ('user__email',)
-    ordering = ('-created_at',)

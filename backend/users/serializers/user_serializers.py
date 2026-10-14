@@ -3,7 +3,6 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import EmailMessage
 from django.db import transaction
 from django.template.loader import get_template
@@ -13,8 +12,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from users.models import User, Profile
-from users.serializers import ProfileSerializer
+from users.models import User
 
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -79,7 +77,6 @@ class UserSerializer(serializers.ModelSerializer):
                                      style={"input_type": "password", "placeholder": "Password"})
     groups_objects = serializers.SerializerMethodField("get_groups_objects", read_only=True)
     groups = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, required=False)
-    profile = ProfileSerializer(required=False)
     is_admin = serializers.SerializerMethodField()
 
     def get_is_admin(self, obj):
@@ -93,7 +90,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "id", "first_name", "last_name", "username", "password", "phone_code", "phone_number",
             "groups", "groups_objects", "staff_number", "is_admin",
-            "email", "profile", "role", "business", "branch", "email_verified",
+            "email", "role", "business", "branch", "email_verified",
         ]
 
     def validate_phone_number(self, value):
@@ -113,7 +110,6 @@ class UserSerializer(serializers.ModelSerializer):
         groups = validated_data.pop("groups", None)
         if not self.context["request"].user.is_staff:
             groups = []
-        profile_data = validated_data.pop("profile", None)
         email = validated_data.get("email")
 
         try:
@@ -126,8 +122,6 @@ class UserSerializer(serializers.ModelSerializer):
             existing_user.is_active = True
             existing_user.email_verified = False
             existing_user.save()
-            if not hasattr(existing_user, "profile"):
-                Profile.objects.create(user=existing_user)
             send_account_confirmation_email(existing_user)
             return existing_user
         except User.DoesNotExist:
@@ -139,11 +133,6 @@ class UserSerializer(serializers.ModelSerializer):
             for group in groups:
                 user.groups.add(group)
 
-        if profile_data is not None:
-            Profile.objects.create(user=user, **profile_data)
-        else:
-            Profile.objects.create(user=user)
-
         return user
 
     def update(self, instance, validated_data):
@@ -152,7 +141,6 @@ class UserSerializer(serializers.ModelSerializer):
         validated_data.pop("staff_number", None)
         if not self.context["request"].user.is_staff:
             groups = None
-        profile_data = validated_data.pop("profile", None)
 
         user = super().update(instance, validated_data)
         if password:
@@ -165,14 +153,6 @@ class UserSerializer(serializers.ModelSerializer):
                 user.groups.add(group)
         user.save()
 
-        if profile_data is not None:
-            try:
-                prof = user.profile
-                profile_serializer = ProfileSerializer(prof, data=profile_data, partial=True)
-                if profile_serializer.is_valid():
-                    profile_serializer.save()
-            except ObjectDoesNotExist:
-                Profile.objects.create(user=user, **profile_data)
         return user
 
 
