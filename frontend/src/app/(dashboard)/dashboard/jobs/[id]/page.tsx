@@ -121,7 +121,7 @@ export default function JobDetailPage() {
 
   if (jobDetailLoading && !jobDetail) {
     return (
-      <div className="flex flex-col gap-6 p-6 max-w-5xl">
+      <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6 max-w-5xl">
         <Skeleton className="h-8 w-48" />
         <div className="grid gap-4 md:grid-cols-2">
           <Skeleton className="h-40 w-full" />
@@ -135,7 +135,7 @@ export default function JobDetailPage() {
 
   if (jobDetailError || !jobDetail) {
     return (
-      <div className="flex flex-col gap-4 p-6">
+      <div className="flex flex-col gap-4 p-3 sm:p-6">
         <Link href="/dashboard/jobs">
           <Button variant="ghost" size="sm">
             <ArrowLeftIcon className="size-4" />
@@ -161,7 +161,7 @@ export default function JobDetailPage() {
     : null;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-5xl">
+    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6 max-w-5xl">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
@@ -392,7 +392,7 @@ export default function JobDetailPage() {
                         type="date"
                         value={getCommissionDate(c.id)}
                         onChange={(e) => setCommissionDates((prev) => ({ ...prev, [c.id]: e.target.value }))}
-                        className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                        className="h-9 rounded-md border border-input bg-background px-2 text-xs w-full sm:w-auto"
                       />
                       <Button
                         size="sm"

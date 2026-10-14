@@ -119,8 +119,8 @@ export default function JobsPage() {
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Jobs</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -140,7 +140,7 @@ export default function JobsPage() {
         <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
-            className="pl-9 h-8 w-52 text-sm"
+            className="pl-9 h-9 w-full sm:w-52 text-sm"
             placeholder="Job #, customer, plate…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -151,7 +151,7 @@ export default function JobsPage() {
           value={status}
           onValueChange={(v) => setStatus(v as JobStatus | "")}
         >
-          <SelectTrigger className="h-8 w-38 text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-38 text-xs">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -169,7 +169,7 @@ export default function JobsPage() {
           value={paymentStatus}
           onValueChange={(v) => setPaymentStatus(v as PaymentStatus | "")}
         >
-          <SelectTrigger className="h-8 w-36 text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-36 text-xs">
             <SelectValue placeholder="All payments" />
           </SelectTrigger>
           <SelectContent>
@@ -185,7 +185,7 @@ export default function JobsPage() {
           value={collectionMethod}
           onValueChange={(v) => setCollectionMethod(v as CollectionMethod | "")}
         >
-          <SelectTrigger className="h-8 w-36 text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-36 text-xs">
             <SelectValue placeholder="All methods" />
           </SelectTrigger>
           <SelectContent>
@@ -206,7 +206,7 @@ export default function JobsPage() {
             }
           }}
         >
-          <SelectTrigger className="h-8 w-36 text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-36 text-xs">
             <SelectValue placeholder="All dates" />
           </SelectTrigger>
           <SelectContent>

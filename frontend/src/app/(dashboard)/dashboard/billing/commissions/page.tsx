@@ -197,7 +197,7 @@ export default function CommissionsPage() {
   }, [someSelected]);
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -209,7 +209,7 @@ export default function CommissionsPage() {
       </div>
 
       {/* Summary strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <CoinsIcon className="size-4 text-primary" />
@@ -238,7 +238,7 @@ export default function CommissionsPage() {
           value={type}
           onValueChange={(v) => setType(v as CommissionEntryType | "")}
         >
-          <SelectTrigger className="h-8 w-36 text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-36 text-xs">
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
@@ -253,7 +253,7 @@ export default function CommissionsPage() {
           value={status}
           onValueChange={(v) => setStatus(v as CommissionEntryStatus | "")}
         >
-          <SelectTrigger className="h-8 w-32 text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-32 text-xs">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -268,7 +268,7 @@ export default function CommissionsPage() {
           value={hasPayout}
           onValueChange={(v) => setHasPayout(v as "true" | "false" | "")}
         >
-          <SelectTrigger className="h-8 w-32 text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-32 text-xs">
             <SelectValue placeholder="Payout" />
           </SelectTrigger>
           <SelectContent>
@@ -288,7 +288,7 @@ export default function CommissionsPage() {
             }
           }}
         >
-          <SelectTrigger className="h-8 w-36 text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-36 text-xs">
             <SelectValue placeholder="All dates" />
           </SelectTrigger>
           <SelectContent>
@@ -372,7 +372,7 @@ export default function CommissionsPage() {
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-primary/30 bg-primary/5 px-3 sm:px-4 py-2.5">
           <p className="text-sm font-medium">
             {selectedIds.size} {selectedIds.size === 1 ? "entry" : "entries"} selected
           </p>

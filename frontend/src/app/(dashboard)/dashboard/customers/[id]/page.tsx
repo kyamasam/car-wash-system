@@ -132,7 +132,7 @@ export default function CustomerDetailPage() {
 
   if (currentCustomerLoading) {
     return (
-      <div className="flex flex-col gap-6 p-6 max-w-2xl">
+      <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6 max-w-2xl">
         <Skeleton className="h-8 w-48" />
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -145,7 +145,7 @@ export default function CustomerDetailPage() {
 
   if (currentCustomerError || !currentCustomer) {
     return (
-      <div className="flex flex-col gap-4 p-6">
+      <div className="flex flex-col gap-4 p-3 sm:p-6">
         <Link href="/dashboard/customers">
           <Button variant="ghost" size="sm">
             <ArrowLeftIcon />
@@ -162,7 +162,7 @@ export default function CustomerDetailPage() {
   const vehicles = vehiclesList?.results ?? [];
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-2xl">
+    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6 max-w-2xl">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

@@ -257,7 +257,7 @@ function MemberRow({
       <td className="px-4 py-3">
         {canChangeRole ? (
           <Select value={member.role} onValueChange={(v) => onRoleChange(v as OrgRole)}>
-            <SelectTrigger className="h-7 w-40 text-xs px-2 border-transparent hover:border-border focus:border-border">
+            <SelectTrigger className="h-7 w-full sm:w-40 text-xs px-2 border-transparent hover:border-border focus:border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

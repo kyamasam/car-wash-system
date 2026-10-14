@@ -129,7 +129,7 @@ export default function BillingPage() {
     .reduce((sum, p) => sum + parseFloat(p.amount), 0);
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -141,7 +141,7 @@ export default function BillingPage() {
       </div>
 
       {/* Summary strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <BanknoteIcon className="size-4 text-primary" />
@@ -169,7 +169,7 @@ export default function BillingPage() {
         <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
-            className="pl-9 h-8 w-52 text-sm"
+            className="pl-9 h-9 w-full sm:w-52 text-sm"
             placeholder="Search transactions…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -180,7 +180,7 @@ export default function BillingPage() {
           value={method}
           onValueChange={(v) => setMethod(v as PaymentMethod | "")}
         >
-          <SelectTrigger className="h-8 w-36 text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-36 text-xs">
             <SelectValue placeholder="All methods" />
           </SelectTrigger>
           <SelectContent>
@@ -196,7 +196,7 @@ export default function BillingPage() {
           value={type}
           onValueChange={(v) => setType(v as PaymentType | "")}
         >
-          <SelectTrigger className="h-8 w-32 text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-32 text-xs">
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
@@ -217,7 +217,7 @@ export default function BillingPage() {
             }
           }}
         >
-          <SelectTrigger className="h-8 w-36 text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-36 text-xs">
             <SelectValue placeholder="All dates" />
           </SelectTrigger>
           <SelectContent>

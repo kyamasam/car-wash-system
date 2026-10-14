@@ -170,9 +170,9 @@ export default function ServicesPage() {
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -187,7 +187,7 @@ export default function ServicesPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 w-full sm:max-w-sm">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             className="pl-9"
@@ -200,7 +200,7 @@ export default function ServicesPage() {
           value={category || "all"}
           onValueChange={(v) => setCategory(v === "all" ? "" : (v as ServiceCategory))}
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
