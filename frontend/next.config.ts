@@ -17,9 +17,7 @@ const nextConfig: NextConfig = {
     ],
     minimumCacheTTL: 10,
   },
-  experimental: {
-    turbopackServerFastRefresh: false
-  }
+  
 };
 
 export default nextConfig;

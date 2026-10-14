@@ -30,7 +30,7 @@ export interface CustomerDataPayload {
 
 export interface VehicleDataPayload {
   plate_number: string;
-  vehicle_category: VehicleCategory;
+  vehicle_category?: VehicleCategory;
   make?: string;
   model?: string;
   color?: string;

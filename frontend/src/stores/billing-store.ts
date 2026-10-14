@@ -40,7 +40,7 @@ interface BillingStore {
 
   bulkMarkPaidLoading: boolean;
   bulkMarkPaidError: string | null;
-  bulkMarkPaid: (ids: string[]) => Promise<boolean>;
+  bulkMarkPaid: (ids: string[], paidAt?: string) => Promise<boolean>;
 }
 
 export const useBillingStore = create<BillingStore>((set) => ({
@@ -95,10 +95,13 @@ export const useBillingStore = create<BillingStore>((set) => ({
   bulkMarkPaidLoading: false,
   bulkMarkPaidError: null,
 
-  bulkMarkPaid: async (ids) => {
+  bulkMarkPaid: async (ids, paidAt) => {
     set({ bulkMarkPaidLoading: true, bulkMarkPaidError: null });
     try {
-      await axiosInstance.post("/billing/commission-entries/bulk_mark_paid/", { ids });
+      await axiosInstance.post("/billing/commission-entries/bulk_mark_paid/", {
+        ids,
+        ...(paidAt ? { paid_at: paidAt } : {}),
+      });
       set({ bulkMarkPaidLoading: false });
       return true;
     } catch (err: unknown) {

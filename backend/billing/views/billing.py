@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema_view, extend_schema
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -63,8 +64,10 @@ class CommissionEntryViewSet(BranchScopedMixin, ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        paid_at = serializer.validated_data["paid_at"] or timezone.now()  # type: ignore[index]
+
         with transaction.atomic():
-            updated = qs.update(status=CommissionEntryStatus.PAID)
+            updated = qs.update(status=CommissionEntryStatus.PAID, paid_at=paid_at)
 
         return Response({"updated": updated, "ids": ids}, status=status.HTTP_200_OK)
 

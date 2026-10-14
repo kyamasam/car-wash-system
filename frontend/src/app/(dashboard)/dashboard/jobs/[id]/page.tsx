@@ -1,20 +1,21 @@
 "use client";
 
-import * as React from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
 import { ArrowLeftIcon, Loader2Icon } from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import * as React from "react";
 
-import { useJobsStore } from "@/stores/jobs-store";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { PayJobModal } from "@/components/jobs/pay-job-modal";
 import {
+  PAYMENT_LABEL,
   STATUS_CLASS,
   STATUS_LABEL,
-  PAYMENT_LABEL,
 } from "@/components/jobs/job-card";
+import { PayJobModal } from "@/components/jobs/pay-job-modal";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useBillingStore } from "@/stores/billing-store";
+import { useJobsStore } from "@/stores/jobs-store";
 import type { Job, JobStatus, PaymentStatus } from "@/types/jobs/job";
 
 const PAYMENT_VARIANT: Record<
@@ -97,8 +98,22 @@ export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { jobDetail, jobDetailLoading, jobDetailError, fetchJobDetail, updateJobStatus, statusUpdating } =
     useJobsStore();
+  const { bulkMarkPaid } = useBillingStore();
 
+  const today = new Date().toISOString().slice(0, 10);
   const [payOpen, setPayOpen] = React.useState(false);
+  const [commissionDates, setCommissionDates] = React.useState<Record<string, string>>({});
+  const [commissionPaying, setCommissionPaying] = React.useState<Set<string>>(new Set());
+
+  const getCommissionDate = (cId: string) => commissionDates[cId] ?? today;
+
+  const handleMarkCommissionPaid = async (cId: string) => {
+    setCommissionPaying((prev) => new Set(prev).add(cId));
+    const paidAt = new Date(getCommissionDate(cId)).toISOString();
+    const ok = await bulkMarkPaid([cId], paidAt);
+    if (ok) await fetchJobDetail(id);
+    setCommissionPaying((prev) => { const s = new Set(prev); s.delete(cId); return s; });
+  };
 
   React.useEffect(() => {
     fetchJobDetail(id);
@@ -142,7 +157,7 @@ export default function JobDetailPage() {
 
   const vehicleDesc = job.vehicle
     ? [job.vehicle.color, job.vehicle.make, job.vehicle.model].filter(Boolean).join(" ") ||
-      (job.vehicle.vehicle_category ? VEHICLE_CATEGORY_LABEL[job.vehicle.vehicle_category] : null)
+    (job.vehicle.vehicle_category ? VEHICLE_CATEGORY_LABEL[job.vehicle.vehicle_category] : null)
     : null;
 
   return (
@@ -239,7 +254,7 @@ export default function JobDetailPage() {
 
           {job.worker && (
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Worker</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Attendant</p>
               <p className="text-sm font-medium">{job.worker.name}</p>
               {job.worker.phone && (
                 <p className="text-sm text-muted-foreground">{job.worker.phone}</p>
@@ -362,15 +377,39 @@ export default function JobDetailPage() {
           <div className="flex flex-col gap-2">
             {job.commission_entries.map((c) => (
               <div key={c.id} className="flex items-center justify-between text-sm gap-2">
-                <div className="flex items-center gap-2">
-                  <span>{c.description ?? "Commission"}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="truncate">{c.description ?? "Commission"}</span>
                   <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${COMMISSION_STATUS_CLASS[c.status] ?? ""}`}
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium shrink-0 ${COMMISSION_STATUS_CLASS[c.status] ?? ""}`}
                   >
                     {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
                   </span>
                 </div>
-                <span className="font-medium shrink-0">KES {c.amount}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {c.status === "pending" && (
+                    <>
+                      <input
+                        type="date"
+                        value={getCommissionDate(c.id)}
+                        onChange={(e) => setCommissionDates((prev) => ({ ...prev, [c.id]: e.target.value }))}
+                        className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={commissionPaying.has(c.id)}
+                        onClick={() => handleMarkCommissionPaid(c.id)}
+                      >
+                        {commissionPaying.has(c.id) ? (
+                          <Loader2Icon className="size-3 animate-spin" />
+                        ) : (
+                          "Mark Paid"
+                        )}
+                      </Button>
+                    </>
+                  )}
+                  <span className="font-medium">KES {c.amount}</span>
+                </div>
               </div>
             ))}
           </div>

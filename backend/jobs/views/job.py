@@ -18,7 +18,7 @@ from jobs.serializers import JobSerializer, JobItemSerializer, JobCreateSerializ
     destroy=extend_schema(tags=["jobs"]),
 )
 class JobViewSet(BranchScopedMixin, ModelViewSet):
-    queryset = Job.objects.select_related("branch", "customer", "vehicle", "worker").prefetch_related("items__service", "payments", "commission_entries").all()
+    queryset = Job.objects.select_related("branch", "customer", "vehicle", "worker").prefetch_related("items__service", "payments", "commission_entries").order_by('-created_at').all()
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = JobFilter
     search_fields = ["job_number", "customer__phone", "customer__name", "vehicle__plate_number"]

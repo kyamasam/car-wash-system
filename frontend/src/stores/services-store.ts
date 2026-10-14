@@ -2,10 +2,15 @@ import { create } from "zustand";
 
 import { axiosInstance } from "@/hooks/use-api";
 import type {
+  CreateServicePayload,
+  CreateServicePricePayload,
   Service,
   ServiceAllParams,
   ServiceListParams,
   ServiceListResponse,
+  ServicePrice,
+  UpdateServicePayload,
+  UpdateServicePricePayload,
 } from "@/types/services/service";
 
 const buildQuery = (params: object): string => {
@@ -29,6 +34,14 @@ interface ServicesStore {
   servicesListLoading: boolean;
   servicesListError: string | null;
   fetchServicesList: (params?: ServiceListParams) => Promise<void>;
+
+  createService: (payload: CreateServicePayload) => Promise<Service>;
+  updateService: (id: string, payload: UpdateServicePayload) => Promise<Service>;
+  deleteService: (id: string) => Promise<void>;
+
+  createServicePrice: (payload: CreateServicePricePayload) => Promise<ServicePrice>;
+  updateServicePrice: (id: string, payload: UpdateServicePricePayload) => Promise<ServicePrice>;
+  deleteServicePrice: (id: string) => Promise<void>;
 }
 
 export const useServicesStore = create<ServicesStore>((set) => ({
@@ -62,5 +75,33 @@ export const useServicesStore = create<ServicesStore>((set) => ({
       const message = err instanceof Error ? err.message : "Failed to load services";
       set({ servicesListError: message, servicesListLoading: false });
     }
+  },
+
+  createService: async (payload) => {
+    const { data } = await axiosInstance.post<Service>("/services/", payload);
+    return data;
+  },
+
+  updateService: async (id, payload) => {
+    const { data } = await axiosInstance.put<Service>(`/services/${id}/`, payload);
+    return data;
+  },
+
+  deleteService: async (id) => {
+    await axiosInstance.delete(`/services/${id}/`);
+  },
+
+  createServicePrice: async (payload) => {
+    const { data } = await axiosInstance.post<ServicePrice>("/services/prices/", payload);
+    return data;
+  },
+
+  updateServicePrice: async (id, payload) => {
+    const { data } = await axiosInstance.put<ServicePrice>(`/services/prices/${id}/`, payload);
+    return data;
+  },
+
+  deleteServicePrice: async (id) => {
+    await axiosInstance.delete(`/services/prices/${id}/`);
   },
 }));

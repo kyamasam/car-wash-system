@@ -28,7 +28,7 @@ class CommissionEntrySerializer(serializers.ModelSerializer):
         model = CommissionEntry
         fields = [
             "id", "job", "job_detail", "worker", "branch", "payout",
-            "type", "status", "amount", "description", "earned_at", "created_at",
+            "type", "status", "amount", "description", "earned_at", "paid_at", "created_at",
         ]
 
 
@@ -40,3 +40,4 @@ class ExpenseSerializer(serializers.ModelSerializer):
 
 class BulkMarkPaidSerializer(serializers.Serializer):
     ids = serializers.ListField(child=serializers.UUIDField(), min_length=1)
+    paid_at = serializers.DateTimeField(required=False, default=None)

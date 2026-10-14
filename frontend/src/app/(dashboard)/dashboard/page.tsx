@@ -1,8 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, Car, CheckCircle2, Wallet } from "lucide-react";
 import type { ElementType } from "react";
+import { useJobsSummaryReport } from "@/hooks/reports/use-jobs-summary-report";
+import { useRevenueReport } from "@/hooks/reports/use-revenue-report";
+import { useJobsStore } from "@/stores/jobs-store";
+import { JobCardGrid } from "@/components/jobs/job-card";
 
 function formatKes(value: number) {
   return `KES ${value.toLocaleString("en-KE", { maximumFractionDigits: 0 })}`;
@@ -13,11 +18,13 @@ function StatCard({
   value,
   sub,
   icon: Icon,
+  loading,
 }: {
   label: string;
   value: string;
   sub: string;
   icon: ElementType;
+  loading?: boolean;
 }) {
   return (
     <Card>
@@ -28,14 +35,64 @@ function StatCard({
         <Icon className="w-4 h-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <p className="text-3xl font-black tracking-tight">{value}</p>
+        {loading ? (
+          <div className="h-9 w-16 rounded bg-muted animate-pulse mb-1" />
+        ) : (
+          <p className="text-3xl font-black tracking-tight">{value}</p>
+        )}
         <p className="text-xs text-muted-foreground mt-1">{sub}</p>
       </CardContent>
     </Card>
   );
 }
 
+function ActiveJobsSkeleton() {
+  return (
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="h-4 w-24 rounded bg-muted animate-pulse" />
+          <div className="h-4 w-32 rounded bg-muted animate-pulse" />
+          <div className="h-4 w-20 rounded bg-muted animate-pulse" />
+          <div className="h-8 w-full rounded bg-muted animate-pulse" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
+  const today = new Date().toISOString().slice(0, 10);
+  const filters = { preset: "today" as const, startDate: today, endDate: today, granularity: "day" as const };
+
+  const { data: jobsSummary, isLoading: summaryLoading } = useJobsSummaryReport(filters);
+  const { data: revenue, isLoading: revenueLoading } = useRevenueReport(filters);
+
+  const { jobsList, jobsListLoading, fetchJobsList } = useJobsStore();
+
+  useEffect(() => {
+    fetchJobsList({ status: "in_progress" });
+  }, [fetchJobsList]);
+
+  const totalJobs = summaryLoading ? undefined : String(jobsSummary?.total_jobs ?? 0);
+  const activeJobs = summaryLoading
+    ? undefined
+    : String(jobsSummary?.status_breakdown.find((s) => s.status === "in_progress")?.count ?? 0);
+  const completedToday = summaryLoading
+    ? undefined
+    : String(
+        jobsSummary?.status_breakdown
+          .filter((s) => ["completed", "ready_for_collection", "collected"].includes(s.status))
+          .reduce((sum, s) => sum + s.count, 0) ?? 0
+      );
+  const revenueToday = revenueLoading
+    ? undefined
+    : revenue
+    ? formatKes(parseFloat(revenue.net_revenue))
+    : "KES 0";
+
+  const activeJobsList = jobsList?.results ?? [];
+
   return (
     <div className="space-y-6">
       <div>
@@ -48,41 +105,62 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Jobs Today"
-          value="—"
+          value={totalJobs ?? "—"}
           sub="Total jobs checked in today"
           icon={Car}
+          loading={summaryLoading}
         />
         <StatCard
           label="Active Jobs"
-          value="—"
+          value={activeJobs ?? "—"}
           sub="Currently in progress"
           icon={Activity}
+          loading={summaryLoading}
         />
         <StatCard
           label="Completed Today"
-          value="—"
+          value={completedToday ?? "—"}
           sub="Ready or collected"
           icon={CheckCircle2}
+          loading={summaryLoading}
         />
         <StatCard
           label="Revenue Today"
-          value="—"
+          value={revenueToday ?? "—"}
           sub="Payments received today"
           icon={Wallet}
+          loading={revenueLoading}
         />
       </div>
 
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-16 text-center gap-4">
-          <Car className="w-10 h-10 text-muted-foreground/40" />
-          <div>
-            <p className="font-semibold text-sm">Welcome to SF Car Wash</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Create your first job to get started.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold">Active Jobs</h2>
+          {!jobsListLoading && (
+            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+              {activeJobsList.length}
+            </span>
+          )}
+        </div>
+
+        {jobsListLoading ? (
+          <ActiveJobsSkeleton />
+        ) : activeJobsList.length > 0 ? (
+          <JobCardGrid jobs={activeJobsList} />
+        ) : (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center gap-3">
+              <Activity className="w-8 h-8 text-muted-foreground/30" />
+              <div>
+                <p className="text-sm font-medium">No active jobs right now</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Jobs will appear here once they are started.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

@@ -22,6 +22,7 @@ export interface CommissionEntry {
   amount: string;
   description: string;
   earned_at: string;
+  paid_at: string | null;
   created_at: string;
 }
 

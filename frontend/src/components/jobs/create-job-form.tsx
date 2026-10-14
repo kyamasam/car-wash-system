@@ -27,13 +27,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-import { AddVehicleButton } from "@/components/jobs/add-vehicle-dialog";
 import { AddWorkerButton } from "@/components/jobs/add-worker-dialog";
 import { ServicePriceModal } from "@/components/jobs/service-price-modal";
 import type { ServiceLineItem } from "@/components/jobs/service-items-list";
 
 import type { CreateJobPayload, Job } from "@/types/jobs/job";
-import type { Customer, Vehicle } from "@/types/customers/customer";
+import type { Customer } from "@/types/customers/customer";
 import type { Worker } from "@/types/workers/worker";
 import type { Service, ServiceCategory } from "@/types/services/service";
 
@@ -78,13 +77,16 @@ export function CreateJobForm() {
   const [showCreateForm, setShowCreateForm] = React.useState(false);
   const [newCustomerName, setNewCustomerName] = React.useState("");
 
-  // Track newly created items so they appear in dropdowns immediately
+  // Vehicle plate search state
+  const [plateQuery, setPlateQuery] = React.useState("");
+  const [newVehiclePlate, setNewVehiclePlate] = React.useState("");
+
+  // Track newly created workers so they appear in dropdown immediately
   const [extraCustomers, setExtraCustomers] = React.useState<Customer[]>([]);
-  const [extraVehicles, setExtraVehicles] = React.useState<Vehicle[]>([]);
   const [extraWorkers, setExtraWorkers] = React.useState<Worker[]>([]);
 
   const allCustomers = [...customersAll, ...extraCustomers.filter((ec) => !customersAll.find((c) => c.id === ec.id))];
-  const allVehicles = [...vehiclesAll, ...extraVehicles.filter((ev) => !vehiclesAll.find((v) => v.id === ev.id))];
+  const allVehicles = vehiclesAll;
   const allWorkers = [...workersAll, ...extraWorkers.filter((ew) => !workersAll.find((w) => w.id === ew.id))];
 
   const filteredVehicles = customerId
@@ -104,11 +106,11 @@ export function CreateJobForm() {
       ).slice(0, 6)
     : [];
 
-  const vehicleItems = filteredVehicles.map((v) => ({
-    value: v.id,
-    label: v.plate_number,
-    sublabel: [v.make, v.model, v.color].filter(Boolean).join(" · ") || undefined,
-  }));
+  const plateSearchResults = plateQuery.length >= 1
+    ? filteredVehicles
+        .filter((v) => v.plate_number.toLowerCase().includes(plateQuery.toLowerCase()))
+        .slice(0, 6)
+    : [];
 
   const workerItems = allWorkers.map((w) => ({
     value: w.id,
@@ -126,14 +128,11 @@ export function CreateJobForm() {
   function clearCustomer() {
     setCustomerId("");
     setVehicleId("");
+    setNewVehiclePlate("");
+    setPlateQuery("");
     setPhoneQuery("");
     setShowCreateForm(false);
     setNewCustomerName("");
-  }
-
-  function handleVehicleCreated(vehicle: Vehicle) {
-    setExtraVehicles((prev) => [vehicle, ...prev]);
-    setVehicleId(vehicle.id);
   }
 
   function handleWorkerCreated(worker: Worker) {
@@ -225,6 +224,7 @@ export function CreateJobForm() {
       payload.customer_data = { phone: phoneQuery.trim(), name: newCustomerName.trim() };
     }
     if (vehicleId) payload.vehicle_id = vehicleId;
+    else if (newVehiclePlate.trim()) payload.vehicle_data = { plate_number: newVehiclePlate.trim().toUpperCase() };
     if (workerId) payload.worker = workerId;
     if (notes.trim()) payload.notes = notes.trim();
     if (discount.trim()) payload.discount_amount = discount.trim();
@@ -457,23 +457,92 @@ export function CreateJobForm() {
               )}
             </div>
 
-            {/* Vehicle — only when customer is selected */}
+            {/* Vehicle — only when customer is selected or creating new customer */}
             {showVehicleSelector && (
-              <div className="border-b p-4 space-y-1.5">
+              <div className="border-b p-4 space-y-2">
                 <Label>Vehicle</Label>
-                <SearchCombobox
-                  items={vehicleItems}
-                  value={vehicleId}
-                  onSelect={setVehicleId}
-                  placeholder="Search vehicle..."
-                  loading={vehiclesAllLoading}
-                  footer={
-                    <AddVehicleButton
-                      onCreated={handleVehicleCreated}
-                      defaultCustomerId={customerId || undefined}
-                    />
-                  }
-                />
+
+                {/* Selected vehicle chip */}
+                {(vehicleId || newVehiclePlate) ? (
+                  <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+                    <div className="flex-1 min-w-0">
+                      {vehicleId ? (
+                        <p className="text-sm font-medium truncate">
+                          {allVehicles.find((v) => v.id === vehicleId)?.plate_number ?? "Vehicle"}
+                        </p>
+                      ) : (
+                        <p className="text-sm font-medium truncate">
+                          {newVehiclePlate}{" "}
+                          <span className="text-xs font-normal text-muted-foreground">(new)</span>
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setVehicleId(""); setNewVehiclePlate(""); setPlateQuery(""); }}
+                      className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                    >
+                      <XIcon className="size-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Plate number input */}
+                    <div className="relative">
+                      <Input
+                        placeholder="Type plate number..."
+                        value={plateQuery}
+                        onChange={(e) => setPlateQuery(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (plateSearchResults.length === 1) {
+                              setVehicleId(plateSearchResults[0].id);
+                              setPlateQuery("");
+                            } else if (plateQuery.trim()) {
+                              setNewVehiclePlate(plateQuery.trim());
+                              setPlateQuery("");
+                            }
+                          }
+                        }}
+                        disabled={vehiclesAllLoading}
+                      />
+                      {vehiclesAllLoading && (
+                        <Loader2Icon className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+
+                    {/* Plate search results */}
+                    {plateQuery.length >= 1 && (
+                      <div className="rounded-md border bg-popover shadow-sm overflow-hidden">
+                        {plateSearchResults.length > 0 ? (
+                          <ul>
+                            {plateSearchResults.map((vehicle) => (
+                              <li key={vehicle.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => { setVehicleId(vehicle.id); setPlateQuery(""); }}
+                                  className="flex w-full flex-col px-3 py-2 text-left hover:bg-accent transition-colors"
+                                >
+                                  <span className="text-sm font-medium">{vehicle.plate_number}</span>
+                                  {(vehicle.make || vehicle.model) && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {[vehicle.make, vehicle.model, vehicle.color].filter(Boolean).join(" · ")}
+                                    </span>
+                                  )}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="flex items-center justify-between px-3 py-2">
+                            <span className="text-sm text-muted-foreground">No match — press Enter to use this plate</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
 

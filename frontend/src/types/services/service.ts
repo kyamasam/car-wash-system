@@ -1,5 +1,5 @@
 export type ServiceCategory = "vehicle" | "carpet" | "other";
-export type ServiceUnit = "per_job" | "per_hour";
+export type ServiceUnit = "per_job" | "per_item" | "by_size";
 export type CommissionType = "fixed" | "percentage";
 
 export interface ServicePrice {
@@ -47,3 +47,25 @@ export interface ServiceListParams {
   search?: string;
   page?: number;
 }
+
+export interface CreateServicePayload {
+  name: string;
+  code: string;
+  category: ServiceCategory;
+  unit: ServiceUnit;
+  icon?: string;
+  is_active?: boolean;
+}
+export type UpdateServicePayload = Partial<CreateServicePayload>;
+
+export interface CreateServicePricePayload {
+  service: string;
+  branch?: string;
+  vehicle_category?: string;
+  size_label?: string;
+  price: string;
+  commission_value: string;
+  commission_type: CommissionType;
+  icon?: string;
+}
+export type UpdateServicePricePayload = Partial<CreateServicePricePayload>;

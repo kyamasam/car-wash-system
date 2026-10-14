@@ -13,12 +13,12 @@ class ServiceCategory:
 class PricingUnit:
     PER_JOB = "per_job"
     PER_ITEM = "per_item"
-    PER_SQFT = "per_sqft"
+    BY_SIZE = "by_size"
 
     choices = [
         (PER_JOB, "Per Job"),
         (PER_ITEM, "Per Item"),
-        (PER_SQFT, "Per Sq Ft"),
+        (BY_SIZE, "By Size"),
     ]
 
 
