@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { Bell, Menu, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useMemo } from "react";
-import { OrgSwitcher } from "./org-switcher";
+import { BranchSwitcher } from "./branch-switcher";
 
 interface DashboardTopBarProps {
   onMenuClick: () => void;
@@ -25,6 +25,7 @@ const SEGMENT_MAP: Record<string, string> = {
   dashboard: "Overview",
   vps: "VPS Instances",
   billing: "Billing",
+  commissions: "Commissions",
   settings: "Settings",
 };
 
@@ -88,7 +89,7 @@ export function DashboardTopBar({ onMenuClick, isMobile }: DashboardTopBarProps)
 
       {/* Right */}
       <div className="flex items-center gap-2 shrink-0 ml-4">
-        <OrgSwitcher />
+        <BranchSwitcher />
         <div
           className={cn(
             "hidden md:flex items-center gap-2 w-48",

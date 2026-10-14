@@ -4,8 +4,10 @@ import { axiosInstance } from "@/hooks/use-api";
 import type {
   CreateJobPayload,
   Job,
+  JobDetail,
   JobListParams,
   JobListResponse,
+  JobStatus,
 } from "@/types/jobs/job";
 
 const buildQuery = (params: object): string => {
@@ -25,7 +27,7 @@ interface JobsStore {
   jobsListError: string | null;
   fetchJobsList: (params?: JobListParams) => Promise<void>;
 
-  jobDetail: Job | null;
+  jobDetail: JobDetail | null;
   jobDetailLoading: boolean;
   jobDetailError: string | null;
   fetchJobDetail: (id: string) => Promise<void>;
@@ -33,6 +35,9 @@ interface JobsStore {
   createJobLoading: boolean;
   createJobError: string | null;
   createJob: (payload: CreateJobPayload) => Promise<Job | null>;
+
+  statusUpdating: Record<string, boolean>;
+  updateJobStatus: (id: string, status: JobStatus) => Promise<void>;
 }
 
 export const useJobsStore = create<JobsStore>((set) => ({
@@ -59,7 +64,7 @@ export const useJobsStore = create<JobsStore>((set) => ({
   fetchJobDetail: async (id) => {
     set({ jobDetailLoading: true, jobDetailError: null });
     try {
-      const { data } = await axiosInstance.get<Job>(`/jobs/${id}/`);
+      const { data } = await axiosInstance.get<JobDetail>(`/jobs/${id}/`);
       set({ jobDetail: data, jobDetailLoading: false });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load job";
@@ -80,6 +85,29 @@ export const useJobsStore = create<JobsStore>((set) => ({
       const message = err instanceof Error ? err.message : "Failed to create job";
       set({ createJobError: message, createJobLoading: false });
       return null;
+    }
+  },
+
+  statusUpdating: {},
+
+  updateJobStatus: async (id, status) => {
+    set((s) => ({ statusUpdating: { ...s.statusUpdating, [id]: true } }));
+    try {
+      const { data } = await axiosInstance.patch<Job>(`/jobs/${id}/`, { status });
+      set((s) => ({
+        statusUpdating: { ...s.statusUpdating, [id]: false },
+        jobsList: s.jobsList
+          ? {
+              ...s.jobsList,
+              results: s.jobsList.results.map((j) => (j.id === id ? data : j)),
+            }
+          : s.jobsList,
+        jobDetail: s.jobDetail?.id === id
+          ? { ...s.jobDetail, status: data.status, payment_status: data.payment_status, updated_at: data.updated_at }
+          : s.jobDetail,
+      }));
+    } catch {
+      set((s) => ({ statusUpdating: { ...s.statusUpdating, [id]: false } }));
     }
   },
 }));

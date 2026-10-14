@@ -1,4 +1,4 @@
-import { BarChart3, Car, LayoutDashboard, Settings, Users, Wrench, Wallet } from "lucide-react";
+import { BarChart3, Car, CoinsIcon, LayoutDashboard, Settings, Users, Wrench, Wallet } from "lucide-react";
 
 export interface NavItem {
   title: string;
@@ -43,6 +43,12 @@ export const NAV_ITEMS: NavItem[] = [
     title: "Billing",
     href: "/dashboard/billing",
     icon: Wallet,
+    section: "main",
+  },
+  {
+    title: "Commissions",
+    href: "/dashboard/billing/commissions",
+    icon: CoinsIcon,
     section: "main",
   },
   {

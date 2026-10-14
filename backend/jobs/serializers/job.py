@@ -4,15 +4,26 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
+from billing.serializers.billing import CommissionEntrySerializer, PaymentSerializer
 from billing.services.commission import create_commission_entries
 from customers.constants import VehicleCategory
+from customers.serializers import CustomerSerializer, VehicleSerializer
 from jobs.constants import CollectionMethod, PaymentStatus
 from jobs.models import Job, JobItem
 from jobs.services.job_creation import build_job_items, resolve_customer, resolve_vehicle
 from services.models import Service, ServicePrice
+from workers.serializers.worker import WorkerSerializer
+
+
+class _ServiceSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Service
+        fields = ["id", "name", "code", "category", "unit", "icon"]
 
 
 class JobItemSerializer(serializers.ModelSerializer):
+    service = _ServiceSummarySerializer(read_only=True)
+
     class Meta:
         model = JobItem
         fields = "__all__"
@@ -20,6 +31,11 @@ class JobItemSerializer(serializers.ModelSerializer):
 
 class JobSerializer(serializers.ModelSerializer):
     items = JobItemSerializer(many=True, read_only=True)
+    customer = CustomerSerializer(read_only=True)
+    vehicle = VehicleSerializer(read_only=True)
+    worker = WorkerSerializer(read_only=True)
+    payments = PaymentSerializer(many=True, read_only=True)
+    commission_entries = CommissionEntrySerializer(many=True, read_only=True)
 
     class Meta:
         model = Job
@@ -100,7 +116,7 @@ class JobCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         user = self.context["request"].user
-        print("user", user.branch)
+        print("user branch", user)
         if not user.branch_id:
             raise serializers.ValidationError(
                 {"branch": "Your account has no assigned branch. Contact your administrator."}

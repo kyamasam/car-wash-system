@@ -7,8 +7,8 @@ import { useCurrentUser } from "@/hooks/auth/use-current-user";
 import { LucideMenu, LucideX } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { BranchSwitcher } from "./branch-switcher";
 import { CurrencySwitcher } from "./currency-switcher";
-import { OrgSwitcher } from "./org-switcher";
 import { UserMenu } from "./user-menu";
 
 export const TopNavigation = () => {
@@ -57,8 +57,8 @@ export const TopNavigation = () => {
               </svg>
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-[17px] font-black tracking-tight text-primary/90 uppercase">Samfast</span>
-              <span className="text-[9px] font-light tracking-[0.3em] text-primary uppercase">Networks</span>
+              <span className="text-[17px] font-black tracking-tight text-primary/90 uppercase">Carwash</span>
+              <span className="text-[9px] font-light tracking-[0.3em] text-primary uppercase">Manager</span>
             </div>
           </Link>
 
@@ -79,7 +79,7 @@ export const TopNavigation = () => {
           <div className="hidden md:flex items-center gap-2">
             {isAuthenticated && user ? (
               <>
-                <OrgSwitcher />
+                <BranchSwitcher />
                 <UserMenu />
               </>
             ) : (
@@ -123,7 +123,7 @@ export const TopNavigation = () => {
                 <ModeToggle />
                 {isAuthenticated && user ? (
                   <>
-                    <OrgSwitcher />
+                    <BranchSwitcher />
                     <UserMenu />
                   </>
                 ) : (

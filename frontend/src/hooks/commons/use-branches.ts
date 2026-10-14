@@ -5,17 +5,15 @@ export interface Branch {
   name: string;
   code: string;
   location: string;
-}
-
-interface PaginatedBranches {
-  count: number;
-  results: Branch[];
+  phone: string;
+  business: string;
+  is_active: boolean;
 }
 
 export function useBranches() {
-  return useApiQuery<PaginatedBranches, Branch[]>("/commons/branches/", {
+  return useApiQuery<Branch[], Branch[]>("/commons/branches/all/", {
     queryKey: ["branches"],
-    select: (data) => data.results,
+    select: (data) => data,
     staleTime: 1000 * 60 * 10,
     enabled: typeof window !== "undefined" && !!localStorage.getItem("authToken"),
   });

@@ -2,7 +2,7 @@ import { AuthHeroLayout } from "@/components/auth/auth-hero-layout";
 import { RegisterCard } from "@/components/auth/register-card";
 
 export const metadata = {
-  title: "Create account — SamfastNetworks",
+  title: "Create account — CarwashManager",
 };
 
 export default function RegisterPage() {

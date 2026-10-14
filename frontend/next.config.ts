@@ -9,6 +9,7 @@ const devPatterns =
     : [];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "techcommunity.microsoft.com", port: "", pathname: "/**" },

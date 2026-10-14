@@ -2,7 +2,16 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeftIcon, Loader2Icon } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  CheckIcon,
+  Loader2Icon,
+  MinusIcon,
+  PlusIcon,
+  Trash2Icon,
+  XIcon,
+  UserPlusIcon,
+} from "lucide-react";
 import Link from "next/link";
 
 import { useApiMutation } from "@/hooks/use-api";
@@ -16,15 +25,24 @@ import { SearchCombobox } from "@/components/ui/search-combobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
-import { AddCustomerButton } from "@/components/jobs/add-customer-dialog";
 import { AddVehicleButton } from "@/components/jobs/add-vehicle-dialog";
 import { AddWorkerButton } from "@/components/jobs/add-worker-dialog";
-import { ServiceItemsList, ServiceLineItem } from "@/components/jobs/service-items-list";
+import { ServicePriceModal } from "@/components/jobs/service-price-modal";
+import type { ServiceLineItem } from "@/components/jobs/service-items-list";
 
 import type { CreateJobPayload, Job } from "@/types/jobs/job";
 import type { Customer, Vehicle } from "@/types/customers/customer";
 import type { Worker } from "@/types/workers/worker";
+import type { Service, ServiceCategory } from "@/types/services/service";
+
+const CATEGORIES: { value: "all" | ServiceCategory; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "vehicle", label: "Vehicle" },
+  { value: "carpet", label: "Carpet" },
+  { value: "other", label: "Other" },
+];
 
 export function CreateJobForm() {
   const router = useRouter();
@@ -52,8 +70,15 @@ export function CreateJobForm() {
   const [contactPhone, setContactPhone] = React.useState("");
   const [notes, setNotes] = React.useState("");
   const [discount, setDiscount] = React.useState("");
+  const [activeCategory, setActiveCategory] = React.useState<"all" | ServiceCategory>("all");
+  const [priceModalService, setPriceModalService] = React.useState<Service | null>(null);
 
-  // Track newly created items so they appear in the dropdowns immediately
+  // Customer phone search state
+  const [phoneQuery, setPhoneQuery] = React.useState("");
+  const [showCreateForm, setShowCreateForm] = React.useState(false);
+  const [newCustomerName, setNewCustomerName] = React.useState("");
+
+  // Track newly created items so they appear in dropdowns immediately
   const [extraCustomers, setExtraCustomers] = React.useState<Customer[]>([]);
   const [extraVehicles, setExtraVehicles] = React.useState<Vehicle[]>([]);
   const [extraWorkers, setExtraWorkers] = React.useState<Worker[]>([]);
@@ -62,17 +87,22 @@ export function CreateJobForm() {
   const allVehicles = [...vehiclesAll, ...extraVehicles.filter((ev) => !vehiclesAll.find((v) => v.id === ev.id))];
   const allWorkers = [...workersAll, ...extraWorkers.filter((ew) => !workersAll.find((w) => w.id === ew.id))];
 
-  // Filter vehicles by selected customer
   const filteredVehicles = customerId
     ? allVehicles.filter((v) => v.customer === customerId || !v.customer)
     : allVehicles;
 
-  // Combobox items
-  const customerItems = allCustomers.map((c) => ({
-    value: c.id,
-    label: c.name ? `${c.name} (${c.phone})` : c.phone,
-    sublabel: c.email ?? undefined,
-  }));
+  const filteredServices = activeCategory === "all"
+    ? servicesAll
+    : servicesAll.filter((s) => s.category === activeCategory);
+
+  const selectedCustomer = allCustomers.find((c) => c.id === customerId) ?? null;
+
+  const phoneSearchResults = phoneQuery.length >= 2
+    ? allCustomers.filter((c) =>
+        c.phone.includes(phoneQuery) ||
+        c.name?.toLowerCase().includes(phoneQuery.toLowerCase())
+      ).slice(0, 6)
+    : [];
 
   const vehicleItems = filteredVehicles.map((v) => ({
     value: v.id,
@@ -86,9 +116,19 @@ export function CreateJobForm() {
     sublabel: w.phone ?? undefined,
   }));
 
-  function handleCustomerCreated(customer: Customer) {
-    setExtraCustomers((prev) => [customer, ...prev]);
+  function selectCustomer(customer: Customer) {
     setCustomerId(customer.id);
+    setPhoneQuery("");
+    setShowCreateForm(false);
+    setNewCustomerName("");
+  }
+
+  function clearCustomer() {
+    setCustomerId("");
+    setVehicleId("");
+    setPhoneQuery("");
+    setShowCreateForm(false);
+    setNewCustomerName("");
   }
 
   function handleVehicleCreated(vehicle: Vehicle) {
@@ -101,6 +141,63 @@ export function CreateJobForm() {
     setWorkerId(worker.id);
   }
 
+  function addServiceWithPrice(service: Service, priceId?: string) {
+    const alreadyAdded = serviceItems.some((i) => i.serviceId === service.id);
+    if (alreadyAdded) {
+      setServiceItems((prev) => prev.filter((i) => i.serviceId !== service.id));
+      return;
+    }
+    setServiceItems((prev) => [
+      ...prev,
+      {
+        serviceId: service.id,
+        serviceName: service.name,
+        serviceCode: service.code,
+        quantity: 1,
+        selectedPriceId: priceId,
+      },
+    ]);
+  }
+
+  function handleServiceCardClick(service: Service) {
+    const alreadyAdded = serviceItems.some((i) => i.serviceId === service.id);
+    if (alreadyAdded) {
+      setServiceItems((prev) => prev.filter((i) => i.serviceId !== service.id));
+      return;
+    }
+    if (service.prices.length > 1) {
+      setPriceModalService(service);
+    } else {
+      addServiceWithPrice(service, service.prices[0]?.id);
+    }
+  }
+
+  function handlePriceSelect(priceId: string) {
+    if (!priceModalService) return;
+    addServiceWithPrice(priceModalService, priceId);
+    setPriceModalService(null);
+  }
+
+  function updateQuantity(serviceId: string, delta: number) {
+    setServiceItems((prev) =>
+      prev.map((item) =>
+        item.serviceId === serviceId
+          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
+          : item
+      )
+    );
+  }
+
+  function removeItem(serviceId: string) {
+    setServiceItems((prev) => prev.filter((i) => i.serviceId !== serviceId));
+  }
+
+  const total = serviceItems.reduce((sum, item) => {
+    const service = servicesAll.find((s) => s.id === item.serviceId);
+    const price = service?.prices.find((p) => p.id === item.selectedPriceId);
+    return sum + (price ? Number(price.price) * item.quantity : 0);
+  }, 0);
+
   const { mutate: createJob, isPending } = useApiMutation<Job, CreateJobPayload>({
     method: "POST",
     url: "/jobs/",
@@ -111,10 +208,7 @@ export function CreateJobForm() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    if (serviceItems.length === 0) {
-      return;
-    }
+    if (serviceItems.length === 0) return;
 
     const payload: CreateJobPayload = {
       collection_method: collectionMethod,
@@ -125,7 +219,11 @@ export function CreateJobForm() {
       })),
     };
 
-    if (customerId) payload.customer_id = customerId;
+    if (customerId) {
+      payload.customer_id = customerId;
+    } else if (showCreateForm && phoneQuery.trim()) {
+      payload.customer_data = { phone: phoneQuery.trim(), name: newCustomerName.trim() };
+    }
     if (vehicleId) payload.vehicle_id = vehicleId;
     if (workerId) payload.worker = workerId;
     if (notes.trim()) payload.notes = notes.trim();
@@ -139,178 +237,444 @@ export function CreateJobForm() {
   }
 
   const canSubmit = serviceItems.length > 0 && !isPending;
+  const showVehicleSelector = !!customerId || showCreateForm;
+  const showSearchResults = !customerId && phoneQuery.length >= 2;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Customer + Vehicle */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label>Customer</Label>
-          <SearchCombobox
-            items={customerItems}
-            value={customerId}
-            onSelect={(v) => {
-              setCustomerId(v);
-              if (!v) setVehicleId("");
-            }}
-            placeholder="Search customer..."
-            loading={customersAllLoading}
-            footer={
-              <AddCustomerButton
-                onCreated={handleCustomerCreated}
-              />
-            }
-          />
-        </div>
+    <>
+      <ServicePriceModal
+        service={priceModalService}
+        onSelect={handlePriceSelect}
+        onClose={() => setPriceModalService(null)}
+      />
 
-        <div className="space-y-1.5">
-          <Label>Vehicle</Label>
-          <SearchCombobox
-            items={vehicleItems}
-            value={vehicleId}
-            onSelect={setVehicleId}
-            placeholder="Search vehicle..."
-            loading={vehiclesAllLoading}
-            footer={
-              <AddVehicleButton
-                onCreated={handleVehicleCreated}
-                defaultCustomerId={customerId || undefined}
-              />
-            }
-          />
-        </div>
-      </div>
-
-      {/* Services */}
-      <div className="space-y-1.5">
-        <Label>
-          Services <span className="text-destructive">*</span>
-        </Label>
-        <ServiceItemsList
-          services={servicesAll}
-          loadingServices={servicesAllLoading}
-          items={serviceItems}
-          onChange={setServiceItems}
-        />
-        {serviceItems.length === 0 && (
-          <p className="text-xs text-destructive">At least one service is required.</p>
-        )}
-      </div>
-
-      {/* Worker + Collection method */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label>Worker</Label>
-          <SearchCombobox
-            items={workerItems}
-            value={workerId}
-            onSelect={setWorkerId}
-            placeholder="Assign a worker..."
-            loading={workersAllLoading}
-            footer={
-              currentUser?.branch ? (
-                <AddWorkerButton
-                  onCreated={handleWorkerCreated}
-                  branchId={currentUser.branch}
-                />
-              ) : undefined
-            }
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Collection Method</Label>
-          <div className="flex gap-3 pt-1">
-            {(["walk_in", "pickup"] as const).map((method) => (
-              <label
-                key={method}
-                className="flex cursor-pointer items-center gap-2 text-sm"
+      <form onSubmit={handleSubmit} className="flex h-full gap-0 overflow-hidden">
+        {/* ── Left panel: service grid ── */}
+        <div className="flex flex-1 flex-col overflow-hidden border-r">
+          {/* Category filter tabs */}
+          <div className="flex gap-1 border-b px-4 py-3">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.value}
+                type="button"
+                onClick={() => setActiveCategory(cat.value)}
+                className={cn(
+                  "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                  activeCategory === cat.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
               >
-                <input
-                  type="radio"
-                  name="collection_method"
-                  value={method}
-                  checked={collectionMethod === method}
-                  onChange={() => setCollectionMethod(method)}
-                  className="accent-primary"
-                />
-                {method === "walk_in" ? "Walk-in" : "Pickup"}
-              </label>
+                {cat.label}
+              </button>
             ))}
           </div>
-        </div>
-      </div>
 
-      {/* Pickup address (conditional) */}
-      {collectionMethod === "pickup" && (
-        <div className="space-y-1.5">
-          <Label htmlFor="pickup-address">Pickup Address</Label>
-          <Input
-            id="pickup-address"
-            placeholder="Enter pickup address"
-            value={pickupAddress}
-            onChange={(e) => setPickupAddress(e.target.value)}
-          />
+          {/* Service cards */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {servicesAllLoading ? (
+              <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
+                <Loader2Icon className="mr-2 size-4 animate-spin" />
+                Loading services...
+              </div>
+            ) : filteredServices.length === 0 ? (
+              <p className="py-16 text-center text-sm text-muted-foreground">
+                No services in this category.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {filteredServices.map((service) => {
+                  const isAdded = serviceItems.some((i) => i.serviceId === service.id);
+                  return (
+                    <button
+                      key={service.id}
+                      type="button"
+                      onClick={() => handleServiceCardClick(service)}
+                      className={cn(
+                        "relative flex flex-col items-start gap-1.5 rounded-lg border-2 p-4 text-left transition-all",
+                        isAdded
+                          ? "border-primary bg-primary/5"
+                          : "border-border bg-card hover:border-primary/50 hover:bg-muted/40"
+                      )}
+                    >
+                      {isAdded && (
+                        <span className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                          <CheckIcon className="size-3" />
+                        </span>
+                      )}
+                      <span className="text-sm font-semibold leading-tight">{service.name}</span>
+                      <span className="text-xs text-muted-foreground">{service.code}</span>
+                      {service.prices.length > 0 && (
+                        <span className="text-xs font-medium text-primary">
+                          {service.prices.length === 1
+                            ? `KES ${Number(service.prices[0].price).toLocaleString()}`
+                            : `${service.prices.length} prices`}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Contact phone + Discount */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="contact-phone">Contact Phone</Label>
-          <Input
-            id="contact-phone"
-            placeholder="Override contact number"
-            value={contactPhone}
-            onChange={(e) => setContactPhone(e.target.value)}
-          />
+        {/* ── Right panel: order summary ── */}
+        <div className="flex w-80 flex-col overflow-hidden xl:w-96">
+          <div className="flex-1 overflow-y-auto">
+
+            {/* Customer */}
+            <div className="border-b p-4 space-y-2">
+              <Label>Customer</Label>
+
+              {/* Selected customer chip */}
+              {selectedCustomer ? (
+                <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {selectedCustomer.name ?? selectedCustomer.phone}
+                    </p>
+                    {selectedCustomer.name && (
+                      <p className="text-xs text-muted-foreground">{selectedCustomer.phone}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearCustomer}
+                    className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <XIcon className="size-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Phone search input */}
+                  <div className="relative">
+                    <Input
+                      placeholder="Search by phone or name..."
+                      value={phoneQuery}
+                      onChange={(e) => {
+                        setPhoneQuery(e.target.value);
+                        setShowCreateForm(false);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (phoneSearchResults.length === 0 && phoneQuery.length >= 2) {
+                            setShowCreateForm(true);
+                          } else if (phoneSearchResults.length === 1) {
+                            selectCustomer(phoneSearchResults[0]);
+                          }
+                        }
+                      }}
+                      disabled={customersAllLoading}
+                    />
+                    {customersAllLoading && (
+                      <Loader2Icon className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+
+                  {/* Search results */}
+                  {showSearchResults && (
+                    <div className="rounded-md border bg-popover shadow-sm overflow-hidden">
+                      {phoneSearchResults.length > 0 ? (
+                        <ul>
+                          {phoneSearchResults.map((customer) => (
+                            <li key={customer.id}>
+                              <button
+                                type="button"
+                                onClick={() => selectCustomer(customer)}
+                                className="flex w-full flex-col px-3 py-2 text-left hover:bg-accent transition-colors"
+                              >
+                                <span className="text-sm font-medium">
+                                  {customer.name ?? customer.phone}
+                                </span>
+                                {customer.name && (
+                                  <span className="text-xs text-muted-foreground">{customer.phone}</span>
+                                )}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="px-3 py-2 text-sm text-muted-foreground">No customer found.</p>
+                      )}
+
+                      {/* New customer trigger */}
+                      {!showCreateForm && (
+                        <div className="border-t">
+                          <button
+                            type="button"
+                            onClick={() => setShowCreateForm(true)}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-accent transition-colors"
+                          >
+                            <UserPlusIcon className="size-4" />
+                            New customer
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Inline create form — data sent with job on submit */}
+                  {showCreateForm && (
+                    <div className="rounded-md border bg-muted/30 p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">New customer</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowCreateForm(false)}
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="new-customer-phone">Phone</Label>
+                        <Input
+                          id="new-customer-phone"
+                          value={phoneQuery}
+                          onChange={(e) => setPhoneQuery(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+                          placeholder="Phone number"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="new-customer-name">
+                          Name <span className="text-muted-foreground font-normal">(optional)</span>
+                        </Label>
+                        <Input
+                          id="new-customer-name"
+                          value={newCustomerName}
+                          onChange={(e) => setNewCustomerName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+                          placeholder="Customer name"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Vehicle — only when customer is selected */}
+            {showVehicleSelector && (
+              <div className="border-b p-4 space-y-1.5">
+                <Label>Vehicle</Label>
+                <SearchCombobox
+                  items={vehicleItems}
+                  value={vehicleId}
+                  onSelect={setVehicleId}
+                  placeholder="Search vehicle..."
+                  loading={vehiclesAllLoading}
+                  footer={
+                    <AddVehicleButton
+                      onCreated={handleVehicleCreated}
+                      defaultCustomerId={customerId || undefined}
+                    />
+                  }
+                />
+              </div>
+            )}
+
+            {/* Selected services */}
+            <div className="p-4 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Selected Services
+              </p>
+
+              {serviceItems.length === 0 ? (
+                <p className="py-4 text-center text-xs text-muted-foreground">
+                  Click a service card to add it here.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {serviceItems.map((item) => {
+                    const service = servicesAll.find((s) => s.id === item.serviceId);
+                    const price = service?.prices.find((p) => p.id === item.selectedPriceId);
+                    const priceLabel = price
+                      ? `KES ${(Number(price.price) * item.quantity).toLocaleString()}`
+                      : "—";
+
+                    return (
+                      <div key={item.serviceId} className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium leading-tight truncate">{item.serviceName}</p>
+                          {price ? (
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {price.size_label ?? price.vehicle_category ?? "Default"} · {priceLabel}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">{priceLabel}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-xs"
+                            onClick={() => updateQuantity(item.serviceId, -1)}
+                            disabled={item.quantity <= 1}
+                          >
+                            <MinusIcon />
+                          </Button>
+                          <span className="w-5 text-center text-sm font-medium tabular-nums">
+                            {item.quantity}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-xs"
+                            onClick={() => updateQuantity(item.serviceId, 1)}
+                          >
+                            <PlusIcon />
+                          </Button>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => removeItem(item.serviceId)}
+                          className="text-muted-foreground hover:text-destructive shrink-0"
+                        >
+                          <Trash2Icon />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Options */}
+            <div className="border-t">
+              <div className="space-y-4 px-4 py-4">
+                {/* Worker */}
+                <div className="space-y-1.5">
+                  <Label>Worker</Label>
+                  <SearchCombobox
+                    items={workerItems}
+                    value={workerId}
+                    onSelect={setWorkerId}
+                    placeholder="Assign a worker..."
+                    loading={workersAllLoading}
+                    footer={
+                      currentUser?.branch ? (
+                        <AddWorkerButton
+                          onCreated={handleWorkerCreated}
+                          branchId={currentUser.branch}
+                        />
+                      ) : undefined
+                    }
+                  />
+                </div>
+
+                {/* Collection method */}
+                <div className="space-y-1.5">
+                  <Label>Collection Method</Label>
+                  <div className="flex gap-3 pt-0.5">
+                    {(["walk_in", "pickup"] as const).map((method) => (
+                      <label key={method} className="flex cursor-pointer items-center gap-2 text-sm">
+                        <input
+                          type="radio"
+                          name="collection_method"
+                          value={method}
+                          checked={collectionMethod === method}
+                          onChange={() => setCollectionMethod(method)}
+                          className="accent-primary"
+                        />
+                        {method === "walk_in" ? "Walk-in" : "Pickup"}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pickup address */}
+                {collectionMethod === "pickup" && (
+                  <div className="space-y-1.5">
+                    <Label>Pickup Address</Label>
+                    <Input
+                      placeholder="Enter pickup address"
+                      value={pickupAddress}
+                      onChange={(e) => setPickupAddress(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                {/* Contact phone */}
+                <div className="space-y-1.5">
+                  <Label>Contact Phone</Label>
+                  <Input
+                    placeholder="Override contact number"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                  />
+                </div>
+
+                {/* Discount */}
+                <div className="space-y-1.5">
+                  <Label>Discount (KES)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={discount}
+                    onChange={(e) => setDiscount(e.target.value)}
+                  />
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-1.5">
+                  <Label>Notes</Label>
+                  <textarea
+                    rows={3}
+                    placeholder="Any special instructions or notes..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 resize-none dark:bg-input/30"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer: total + actions */}
+          <div className="border-t bg-card p-4 space-y-3">
+            {serviceItems.length > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Total</span>
+                <span className="text-lg font-bold">
+                  KES {total.toLocaleString()}
+                </span>
+              </div>
+            )}
+
+            {serviceItems.length === 0 && (
+              <p className="text-xs text-destructive text-center">At least one service is required.</p>
+            )}
+
+            <div className="flex gap-2">
+              <Link href="/dashboard/jobs" className="flex-1">
+                <Button type="button" variant="outline" className="w-full" size="sm">
+                  <ArrowLeftIcon />
+                  Cancel
+                </Button>
+              </Link>
+              <Button type="submit" disabled={!canSubmit} className="flex-1">
+                {isPending ? (
+                  <>
+                    <Loader2Icon className="animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Job"
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="discount">Discount (KES)</Label>
-          <Input
-            id="discount"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            value={discount}
-            onChange={(e) => setDiscount(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Notes */}
-      <div className="space-y-1.5">
-        <Label htmlFor="notes">Notes</Label>
-        <textarea
-          id="notes"
-          rows={3}
-          placeholder="Any special instructions or notes..."
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 resize-none dark:bg-input/30"
-        />
-      </div>
-
-      {/* Footer actions */}
-      <div className="flex items-center justify-between border-t pt-4">
-        <Link href="/dashboard/jobs">
-          <Button type="button" variant="ghost" size="sm">
-            <ArrowLeftIcon />
-            Cancel
-          </Button>
-        </Link>
-        <Button type="submit" disabled={!canSubmit} size="lg">
-          {isPending ? (
-            <>
-              <Loader2Icon className="animate-spin" />
-              Creating...
-            </>
-          ) : (
-            "Create Job"
-          )}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </>
   );
 }

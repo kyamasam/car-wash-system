@@ -38,7 +38,7 @@ export function SidebarBrand({ isOpen }: SidebarBrandProps) {
             isOpen ? "opacity-100 w-auto" : "opacity-0 w-0",
           )}
         >
-          SamfastNetworks
+          Car Wash Manager
         </span>
       </Link>
     </div>

@@ -1,7 +1,10 @@
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 from rest_framework.viewsets import ModelViewSet
 from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from commons.mixins import BranchScopedMixin
+from jobs.filters import JobFilter
 from jobs.models import Job, JobItem
 from jobs.serializers import JobSerializer, JobItemSerializer, JobCreateSerializer
 
@@ -15,7 +18,10 @@ from jobs.serializers import JobSerializer, JobItemSerializer, JobCreateSerializ
     destroy=extend_schema(tags=["jobs"]),
 )
 class JobViewSet(BranchScopedMixin, ModelViewSet):
-    queryset = Job.objects.select_related("branch", "customer", "vehicle", "worker").prefetch_related("items").all()
+    queryset = Job.objects.select_related("branch", "customer", "vehicle", "worker").prefetch_related("items__service", "payments", "commission_entries").all()
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_class = JobFilter
+    search_fields = ["job_number", "customer__phone", "customer__name", "vehicle__plate_number"]
 
     def get_serializer_class(self):
         if self.action == "create":
