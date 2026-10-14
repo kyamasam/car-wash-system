@@ -6,6 +6,8 @@ import type {
   WorkerAllParams,
   WorkerListParams,
   WorkerListResponse,
+  CreateWorkerPayload,
+  UpdateWorkerPayload,
 } from "@/types/workers/worker";
 
 const buildQuery = (params: object): string => {
@@ -29,6 +31,15 @@ interface WorkersStore {
   workersListLoading: boolean;
   workersListError: string | null;
   fetchWorkersList: (params?: WorkerListParams) => Promise<void>;
+
+  currentWorker: Worker | null;
+  currentWorkerLoading: boolean;
+  currentWorkerError: string | null;
+  fetchWorkerById: (id: string) => Promise<void>;
+
+  createWorker: (payload: CreateWorkerPayload) => Promise<Worker>;
+  updateWorker: (id: string, payload: UpdateWorkerPayload) => Promise<Worker>;
+  deleteWorker: (id: string) => Promise<void>;
 }
 
 export const useWorkersStore = create<WorkersStore>((set) => ({
@@ -62,5 +73,34 @@ export const useWorkersStore = create<WorkersStore>((set) => ({
       const message = err instanceof Error ? err.message : "Failed to load workers";
       set({ workersListError: message, workersListLoading: false });
     }
+  },
+
+  currentWorker: null,
+  currentWorkerLoading: false,
+  currentWorkerError: null,
+
+  fetchWorkerById: async (id) => {
+    set({ currentWorkerLoading: true, currentWorkerError: null });
+    try {
+      const { data } = await axiosInstance.get<Worker>(`/workers/${id}/`);
+      set({ currentWorker: data, currentWorkerLoading: false });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load worker";
+      set({ currentWorkerError: message, currentWorkerLoading: false });
+    }
+  },
+
+  createWorker: async (payload) => {
+    const { data } = await axiosInstance.post<Worker>("/workers/", payload);
+    return data;
+  },
+
+  updateWorker: async (id, payload) => {
+    const { data } = await axiosInstance.patch<Worker>(`/workers/${id}/`, payload);
+    return data;
+  },
+
+  deleteWorker: async (id) => {
+    await axiosInstance.delete(`/workers/${id}/`);
   },
 }));

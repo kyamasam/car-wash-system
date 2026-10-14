@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import type { Worker } from "@/types/workers/worker";
 
 interface WorkerPayload {
+  branch: string;
   name: string;
   phone: string;
   national_id: string;
@@ -34,15 +35,11 @@ export function AddWorkerDialog({
   onCreated,
   branchId,
 }: AddWorkerDialogProps) {
-  const [form, setForm] = React.useState<WorkerPayload>({
-    name: "",
-    phone: "",
-    national_id: "",
-  });
+  const [form, setForm] = React.useState({ name: "", phone: "", national_id: "" });
 
   const { mutate, isPending } = useApiMutation<Worker, WorkerPayload>({
     method: "POST",
-    url: `/branch/${branchId}/workers/`,
+    url: "/workers/",
     onSuccess: (data) => {
       onCreated(data);
       onOpenChange(false);
@@ -52,7 +49,7 @@ export function AddWorkerDialog({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    mutate(form);
+    mutate({ ...form, branch: branchId });
   }
 
   return (

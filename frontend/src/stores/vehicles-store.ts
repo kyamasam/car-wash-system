@@ -6,6 +6,8 @@ import type {
   VehicleAllParams,
   VehicleListParams,
   VehicleListResponse,
+  CreateVehiclePayload,
+  UpdateVehiclePayload,
 } from "@/types/customers/customer";
 
 const buildQuery = (params: object): string => {
@@ -29,6 +31,15 @@ interface VehiclesStore {
   vehiclesListLoading: boolean;
   vehiclesListError: string | null;
   fetchVehiclesList: (params?: VehicleListParams) => Promise<void>;
+
+  currentVehicle: Vehicle | null;
+  currentVehicleLoading: boolean;
+  currentVehicleError: string | null;
+  fetchVehicleById: (id: string) => Promise<void>;
+
+  createVehicle: (payload: CreateVehiclePayload) => Promise<Vehicle>;
+  updateVehicle: (id: string, payload: UpdateVehiclePayload) => Promise<Vehicle>;
+  deleteVehicle: (id: string) => Promise<void>;
 }
 
 export const useVehiclesStore = create<VehiclesStore>((set) => ({
@@ -62,5 +73,34 @@ export const useVehiclesStore = create<VehiclesStore>((set) => ({
       const message = err instanceof Error ? err.message : "Failed to load vehicles";
       set({ vehiclesListError: message, vehiclesListLoading: false });
     }
+  },
+
+  currentVehicle: null,
+  currentVehicleLoading: false,
+  currentVehicleError: null,
+
+  fetchVehicleById: async (id) => {
+    set({ currentVehicleLoading: true, currentVehicleError: null });
+    try {
+      const { data } = await axiosInstance.get<Vehicle>(`/customers/vehicles/${id}/`);
+      set({ currentVehicle: data, currentVehicleLoading: false });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load vehicle";
+      set({ currentVehicleError: message, currentVehicleLoading: false });
+    }
+  },
+
+  createVehicle: async (payload) => {
+    const { data } = await axiosInstance.post<Vehicle>("/customers/vehicles/", payload);
+    return data;
+  },
+
+  updateVehicle: async (id, payload) => {
+    const { data } = await axiosInstance.patch<Vehicle>(`/customers/vehicles/${id}/`, payload);
+    return data;
+  },
+
+  deleteVehicle: async (id) => {
+    await axiosInstance.delete(`/customers/vehicles/${id}/`);
   },
 }));

@@ -51,7 +51,7 @@ class VehicleViewSet(ModelViewSet):
     queryset = Vehicle.objects.select_related("customer").all()
     serializer_class = VehicleSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ["vehicle_category"]
+    filterset_fields = ["vehicle_category", "customer"]
     search_fields = ["plate_number", "make", "model", "color"]
 
     @extend_schema(

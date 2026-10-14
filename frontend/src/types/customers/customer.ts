@@ -24,6 +24,7 @@ export interface VehicleListResponse {
 export interface VehicleListParams {
   search?: string;
   vehicle_category?: VehicleCategory;
+  customer?: string;
   page?: number;
 }
 
@@ -58,4 +59,36 @@ export interface CustomerListParams {
 
 export interface CustomerAllParams {
   search?: string;
+}
+
+export interface CreateCustomerPayload {
+  phone: string;
+  name?: string;
+  email?: string;
+  notes?: string;
+}
+
+export interface UpdateCustomerPayload {
+  phone?: string;
+  name?: string | null;
+  email?: string | null;
+  notes?: string | null;
+}
+
+export interface CreateVehiclePayload {
+  plate_number: string;
+  customer?: string | null;
+  vehicle_category?: VehicleCategory | null;
+  make?: string | null;
+  model?: string | null;
+  color?: string | null;
+}
+
+export interface UpdateVehiclePayload {
+  plate_number?: string;
+  customer?: string | null;
+  vehicle_category?: VehicleCategory | null;
+  make?: string | null;
+  model?: string | null;
+  color?: string | null;
 }

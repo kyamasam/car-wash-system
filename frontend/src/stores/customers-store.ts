@@ -6,6 +6,8 @@ import type {
   CustomerAllParams,
   CustomerListParams,
   CustomerListResponse,
+  CreateCustomerPayload,
+  UpdateCustomerPayload,
 } from "@/types/customers/customer";
 
 const buildQuery = (params: object): string => {
@@ -29,6 +31,15 @@ interface CustomersStore {
   customersListLoading: boolean;
   customersListError: string | null;
   fetchCustomersList: (params?: CustomerListParams) => Promise<void>;
+
+  currentCustomer: Customer | null;
+  currentCustomerLoading: boolean;
+  currentCustomerError: string | null;
+  fetchCustomerById: (id: string) => Promise<void>;
+
+  createCustomer: (payload: CreateCustomerPayload) => Promise<Customer>;
+  updateCustomer: (id: string, payload: UpdateCustomerPayload) => Promise<Customer>;
+  deleteCustomer: (id: string) => Promise<void>;
 }
 
 export const useCustomersStore = create<CustomersStore>((set) => ({
@@ -62,5 +73,34 @@ export const useCustomersStore = create<CustomersStore>((set) => ({
       const message = err instanceof Error ? err.message : "Failed to load customers";
       set({ customersListError: message, customersListLoading: false });
     }
+  },
+
+  currentCustomer: null,
+  currentCustomerLoading: false,
+  currentCustomerError: null,
+
+  fetchCustomerById: async (id) => {
+    set({ currentCustomerLoading: true, currentCustomerError: null });
+    try {
+      const { data } = await axiosInstance.get<Customer>(`/customers/${id}/`);
+      set({ currentCustomer: data, currentCustomerLoading: false });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load customer";
+      set({ currentCustomerError: message, currentCustomerLoading: false });
+    }
+  },
+
+  createCustomer: async (payload) => {
+    const { data } = await axiosInstance.post<Customer>("/customers/", payload);
+    return data;
+  },
+
+  updateCustomer: async (id, payload) => {
+    const { data } = await axiosInstance.patch<Customer>(`/customers/${id}/`, payload);
+    return data;
+  },
+
+  deleteCustomer: async (id) => {
+    await axiosInstance.delete(`/customers/${id}/`);
   },
 }));
