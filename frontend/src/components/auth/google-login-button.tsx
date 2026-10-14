@@ -29,7 +29,12 @@ interface tokenResponse {
   token_type: string;
 }
 
-export const GoogleLoginButton = ({
+export const GoogleLoginButton = (props: GoogleLoginButtonProps) => {
+  if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) return null;
+  return <GoogleLoginButtonInner {...props} />;
+};
+
+const GoogleLoginButtonInner = ({
   onSuccess,
   onError,
   className = "",
