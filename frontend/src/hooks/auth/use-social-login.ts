@@ -58,15 +58,10 @@ export const useSocialLogin = (options?: UseSocialLoginOptions) => {
       }
       localStorage.setItem("user", JSON.stringify(user));
 
-      // Invalidate and refetch current user (already done by invalidateQueries)
-      await queryClient.invalidateQueries({ queryKey: ["current-user"] });
-      await queryClient.invalidateQueries({ queryKey: ["saved-jobs"] });
-
-      // Call success callback
+      // Redirect first; refetches run in the background
       options?.onSuccess?.();
-
-      // Redirect to dashboard
-    //   router.push("/dashboard");
+      queryClient.invalidateQueries({ queryKey: ["current-user"] });
+      queryClient.invalidateQueries({ queryKey: ["saved-jobs"] });
 
       return response;
     } catch (err) {

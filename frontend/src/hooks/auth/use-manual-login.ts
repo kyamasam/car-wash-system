@@ -82,9 +82,10 @@ export const useLogin = (onSuccess?: () => void) => {
         return response;
       }
 
-      await queryClient.invalidateQueries({ queryKey: ["current-user"] });
-      await queryClient.invalidateQueries({ queryKey: ["saved-jobs"] });
+      // Redirect first; refetches run in the background
       onSuccess?.();
+      queryClient.invalidateQueries({ queryKey: ["current-user"] });
+      queryClient.invalidateQueries({ queryKey: ["saved-jobs"] });
       return response;
     } catch (error) {
       const message =
