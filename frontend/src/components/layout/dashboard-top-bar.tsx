@@ -10,8 +10,10 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCurrentBusiness } from "@/hooks/commons/use-business";
 import { cn } from "@/lib/utils";
-import { Bell, Menu, Search } from "lucide-react";
+import { Bell, Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useMemo } from "react";
 import { BranchSwitcher } from "./branch-switcher";
@@ -19,6 +21,7 @@ import { BranchSwitcher } from "./branch-switcher";
 interface DashboardTopBarProps {
   onMenuClick: () => void;
   isMobile: boolean;
+  isSidebarOpen: boolean;
 }
 
 const SEGMENT_MAP: Record<string, string> = {
@@ -30,8 +33,9 @@ const SEGMENT_MAP: Record<string, string> = {
   settings: "Settings",
 };
 
-export function DashboardTopBar({ onMenuClick, isMobile }: DashboardTopBarProps) {
+export function DashboardTopBar({ onMenuClick, isMobile, isSidebarOpen }: DashboardTopBarProps) {
   const pathname = usePathname();
+  const { data: business } = useCurrentBusiness();
   const [showSearch, setShowSearch] = useState(false);
 
   const breadcrumbs = useMemo(() => {
@@ -50,20 +54,55 @@ export function DashboardTopBar({ onMenuClick, isMobile }: DashboardTopBarProps)
   return (
     <header
       className={cn(
-        "relative h-12 flex items-center justify-between px-6 shrink-0 w-full rounded-xl border border-white/30 border-b border-b-white/40 bg-white/15",
+        "relative h-12 flex items-center justify-between md:px-6 px-0 shrink-0 w-full rounded-xl border border-white/30 border-b border-b-white/40 bg-white/15",
       )}
     >
       {/* Left */}
       <div className="flex items-center gap-3 min-w-0">
-        {isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onMenuClick}
-            className="shrink-0 -ml-2"
-          >
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onMenuClick}
+          className="shrink-0 -ml-2"
+          aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          title={`${isSidebarOpen ? "Collapse" : "Expand"} sidebar (Ctrl+B)`}
+        >
+          {isMobile ? (
             <Menu className="h-5 w-5" />
-          </Button>
+          ) : isSidebarOpen ? (
+            <PanelLeftClose className="h-5 w-5" />
+          ) : (
+            <PanelLeftOpen className="h-5 w-5" />
+          )}
+        </Button>
+
+        {business && (
+          <>
+            <Link
+              href="/dashboard/settings/business"
+              className="flex items-center gap-2 min-w-0 shrink-0"
+              title={business.name}
+            >
+              <div className="w-7 h-7 rounded-md border border-border bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                {business.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={business.logo} alt="" className="w-full h-full object-contain" />
+                ) : (
+                  <span className="text-[11px] font-bold text-muted-foreground">
+                    {business.name
+                      .split(" ")
+                      .slice(0, 2)
+                      .map((w) => w[0]?.toUpperCase() ?? "")
+                      .join("")}
+                  </span>
+                )}
+              </div>
+              <span className="hidden sm:block text-sm font-semibold truncate max-w-40">
+                {business.name}
+              </span>
+            </Link>
+            <div className="hidden sm:block h-5 w-px bg-border shrink-0" />
+          </>
         )}
 
         <Breadcrumb className="hidden sm:block">

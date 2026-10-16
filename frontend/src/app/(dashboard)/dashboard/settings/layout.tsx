@@ -5,8 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { label: "Organization", href: "/dashboard/settings/org" },
-  { label: "Members", href: "/dashboard/settings/members" },
+  { label: "Business", href: "/dashboard/settings/business" },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +16,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       <div>
         <h1 className="text-xl font-semibold">Settings</h1>
         <p className="text-sm text-muted-foreground">
-          Manage your organization, team, and access settings.
+          Manage your business profile.
         </p>
       </div>
 

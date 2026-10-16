@@ -50,16 +50,17 @@ export function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
       {/* Sidebar panel */}
       <aside
         className={cn(
-          " border border-border z-50 h-full flex flex-col",
+          "border border-border z-50 h-full flex flex-col shrink-0",
           // Colours from your globals
           "bg-background md:rounded-lg",
           "transition-all duration-300 ",
 
           // Width & slide behaviour
           isMobile
-            ? isOpen
-              ? "w-[240px] translate-x-0"
-              : "w-[240px] -translate-x-full"
+            ? [
+                "fixed inset-y-0 left-0 w-[240px] rounded-none shadow-xl",
+                isOpen ? "translate-x-0" : "-translate-x-full",
+              ]
             : isOpen
               ? "w-[240px]"
               : "w-[72px]",

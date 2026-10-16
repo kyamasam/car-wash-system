@@ -1,6 +1,8 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.filters import SearchFilter
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
@@ -21,12 +23,26 @@ from commons.serializers import BusinessSerializer, BranchSerializer
 class BusinessViewSet(ModelViewSet):
     queryset = Business.objects.all()
     serializer_class = BusinessSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         user = self.request.user
         if not user.is_authenticated or user.is_superuser:
             return Business.objects.all()
         return Business.objects.filter(id=user.business_id)
+
+    @extend_schema(tags=["commons"], methods=["GET", "PATCH"])
+    @action(detail=False, methods=["get", "patch"], url_path="current", url_name="current")
+    def current(self, request, *args, **kwargs):
+        business = getattr(request.user, "business", None)
+        if business is None:
+            raise NotFound("You are not linked to a business.")
+        if request.method == "PATCH":
+            serializer = self.get_serializer(business, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        return Response(self.get_serializer(business).data)
 
 
 @extend_schema_view(

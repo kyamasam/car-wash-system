@@ -6,6 +6,12 @@ from .base import UtilColumnsModel
 
 
 class Business(UtilColumnsModel):
+    CURRENCY_CHOICES = [
+        ("KES", "Kenyan Shilling"),
+        ("USD", "US Dollar"),
+        ("EUR", "Euro"),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     primary_user = models.ForeignKey(
@@ -15,6 +21,9 @@ class Business(UtilColumnsModel):
         on_delete=models.SET_NULL,
         related_name="owned_businesses",
     )
+    logo = models.ImageField(upload_to="businesses/logos/", null=True, blank=True)
+    # Set once; locked afterwards (enforced in BusinessSerializer and admin).
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, null=True, blank=True)
 
     class Meta:
         verbose_name_plural = "businesses"

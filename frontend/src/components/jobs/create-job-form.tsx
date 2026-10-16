@@ -21,6 +21,7 @@ import { useVehiclesStore } from "@/stores/vehicles-store";
 import { useWorkersStore } from "@/stores/workers-store";
 import { useServicesStore } from "@/stores/services-store";
 import { queueJobCardPrint } from "@/lib/print/job-card";
+import { useJobCardOptions } from "@/hooks/jobs/use-job-card-options";
 
 import { SearchCombobox } from "@/components/ui/search-combobox";
 import { Button } from "@/components/ui/button";
@@ -209,12 +210,17 @@ export function CreateJobForm() {
     return sum + (price ? Number(price.price) * item.quantity : 0);
   }, 0);
 
+  const getJobCardOptions = useJobCardOptions();
+
   const { mutate: createJob, isPending } = useApiMutation<Job, CreateJobPayload>({
     method: "POST",
     url: "/jobs/",
     onSuccess: (job) => {
       if (printCard) {
-        queueJobCardPrint(job, { workerName: allWorkers.find((w) => w.id === workerId)?.name });
+        queueJobCardPrint(
+          job,
+          getJobCardOptions(job, { workerName: allWorkers.find((w) => w.id === workerId)?.name }),
+        );
       }
       router.push("/dashboard/jobs");
     },

@@ -29,7 +29,7 @@ export function SidebarNav({ isOpen }: SidebarNavProps) {
       ))}
 
       {/* Divider */}
-      {/* <div className="h-px bg-[var(--sidebar-border)] my-2" />
+      <div className="h-px bg-[var(--sidebar-border)] my-2" />
 
       <SectionLabel label="Other" isOpen={isOpen} />
 
@@ -38,9 +38,9 @@ export function SidebarNav({ isOpen }: SidebarNavProps) {
           key={item.href}
           item={item}
           isOpen={isOpen}
-          isActive={pathname === item.href}
+          isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
         />
-      ))} */}
+      ))}
     </nav>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { useCurrentBusiness } from "@/hooks/commons/use-business";
 
 export type Currency = "KES" | "USD" | "EUR";
 
@@ -16,6 +17,8 @@ type CurrencyContextValue = {
   formatInCurrency: (kes: number) => string;
   usdToKes: (usd: number) => number;
   isLoading: boolean;
+  /** True when the business has a fixed currency, so switching is disabled. */
+  isLocked: boolean;
 };
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
@@ -23,7 +26,10 @@ const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 const STORAGE_KEY = "sf_currency";
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [selectedCurrency, setSelectedCurrencyState] = useState<Currency>("KES");
+  const [storedCurrency, setSelectedCurrencyState] = useState<Currency>("KES");
+  const { data: business } = useCurrentBusiness();
+  const businessCurrency = business?.currency ?? null;
+  const selectedCurrency = businessCurrency ?? storedCurrency;
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Currency | null;
@@ -45,8 +51,9 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   }
 
   function formatInCurrency(kes: number): string {
-    const rate = rateMap[selectedCurrency] ?? 1;
-    const kesRate = rateMap["KES"] ?? 1;
+    // Amounts are stored in the business currency when one is set, so no conversion.
+    const rate = businessCurrency ? 1 : rateMap[selectedCurrency] ?? 1;
+    const kesRate = businessCurrency ? 1 : rateMap["KES"] ?? 1;
     // rates are USD-based: 1 USD = rate[target], so KES→target = kes * rate[target] / rate[KES]
     const converted = kes * rate / kesRate;
     const { locale, currency } = CURRENCY_LOCALES[selectedCurrency];
@@ -59,7 +66,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <CurrencyContext.Provider value={{ selectedCurrency, setSelectedCurrency, formatInCurrency, usdToKes, isLoading: false }}>
+    <CurrencyContext.Provider value={{ selectedCurrency, setSelectedCurrency, formatInCurrency, usdToKes, isLoading: false, isLocked: !!businessCurrency }}>
       {children}
     </CurrencyContext.Provider>
   );

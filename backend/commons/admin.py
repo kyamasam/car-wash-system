@@ -5,8 +5,14 @@ from commons.models import Business, Branch, AuditLog
 
 @admin.register(Business)
 class BusinessAdmin(admin.ModelAdmin):
-    list_display = ("name", "is_active", "created_at")
+    list_display = ("name", "currency", "is_active", "created_at")
     search_fields = ("name",)
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(super().get_readonly_fields(request, obj))
+        if obj and obj.currency:
+            readonly.append("currency")
+        return readonly
 
 
 @admin.register(Branch)

@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DashboardTopBar } from "./dashboard-top-bar";
 import { Sidebar } from "./sidebar";
 import { TopNavigation } from "./top-navigation";
@@ -13,21 +13,75 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+type Breakpoint = "mobile" | "tablet" | "desktop";
+
+const MOBILE_MAX = 767; // < md → off-canvas drawer
+const TABLET_MAX = 1023; // md..lg → collapsed rail by default
+const STORAGE_KEY = "sidebar-open";
+
+function getBreakpoint(): Breakpoint {
+  const w = window.innerWidth;
+  if (w <= MOBILE_MAX) return "mobile";
+  if (w <= TABLET_MAX) return "tablet";
+  return "desktop";
+}
+
+function readDesktopPref(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
+
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
+  const [breakpoint, setBreakpoint] = useState<Breakpoint>("desktop");
+  const isMobile = breakpoint === "mobile";
 
+  // Reset open state only when crossing a breakpoint, so resizing within one
+  // doesn't override what the user chose.
   useEffect(() => {
-    const onResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      setIsSidebarOpen(!mobile);
+    let current: Breakpoint | null = null;
+
+    const sync = () => {
+      const next = getBreakpoint();
+      if (next === current) return;
+      current = next;
+      setBreakpoint(next);
+      setIsSidebarOpen(next === "desktop" ? readDesktopPref() : false);
     };
 
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
   }, []);
+
+  const setOpen = useCallback(
+    (open: boolean) => {
+      setIsSidebarOpen(open);
+      if (breakpoint === "desktop") {
+        try {
+          localStorage.setItem(STORAGE_KEY, String(open));
+        } catch {}
+      }
+    },
+    [breakpoint],
+  );
+
+  const toggle = useCallback(() => setOpen(!isSidebarOpen), [setOpen, isSidebarOpen]);
+
+  // Ctrl/Cmd + B toggles the sidebar
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        toggle();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [toggle]);
 
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
@@ -35,19 +89,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="flex-1 p-2 flex gap-2 overflow-hidden">
         <Sidebar
           isOpen={isSidebarOpen}
-          setIsOpen={setIsSidebarOpen}
+          setIsOpen={setOpen}
           isMobile={isMobile}
         />
         {/* Main area slides right to clear the sidebar */}
         <div
           className={cn(
-            "flex flex-col transition-all duration-300 flex-1 w-full",
+            "flex flex-col transition-all duration-300 flex-1 w-full min-w-0",
           )}
         >
           <div className="relative">
             <DashboardTopBar
-              onMenuClick={() => setIsSidebarOpen((o) => !o)}
+              onMenuClick={toggle}
               isMobile={isMobile}
+              isSidebarOpen={isSidebarOpen}
             />
           </div>
 

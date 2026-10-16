@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { PrinterIcon } from "lucide-react";
+import { PrinterIcon, ReceiptIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { printJobCard, type JobCardData } from "@/lib/print/job-card";
+import { useJobCardOptions } from "@/hooks/jobs/use-job-card-options";
+import { printJobCard, printReceipt, type JobCardData } from "@/lib/print/job-card";
 
 type PrintJobCardButtonProps = Omit<React.ComponentProps<typeof Button>, "onClick"> & {
   job: JobCardData;
@@ -20,15 +21,48 @@ export function PrintJobCardButton({
   variant = "outline",
   ...props
 }: PrintJobCardButtonProps) {
+  const getJobCardOptions = useJobCardOptions();
+
   return (
     <Button
       type="button"
       variant={variant}
-      onClick={() => printJobCard(job, { workerName, businessName })}
+      onClick={() => printJobCard(job, {
+          ...getJobCardOptions(job),
+          workerName,
+          ...(businessName ? { businessName } : {}),
+        })}
       {...props}
     >
       <PrinterIcon />
       {children ?? "Print Job Card"}
+    </Button>
+  );
+}
+
+export function PrintReceiptButton({
+  job,
+  workerName,
+  businessName,
+  children,
+  variant = "outline",
+  ...props
+}: PrintJobCardButtonProps) {
+  const getJobCardOptions = useJobCardOptions();
+
+  return (
+    <Button
+      type="button"
+      variant={variant}
+      onClick={() => printReceipt(job, {
+          ...getJobCardOptions(job),
+          workerName,
+          ...(businessName ? { businessName } : {}),
+        })}
+      {...props}
+    >
+      <ReceiptIcon />
+      {children ?? "Print Receipt"}
     </Button>
   );
 }

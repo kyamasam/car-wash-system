@@ -16,8 +16,10 @@ const CURRENCIES: { code: Currency; label: string }[] = [
 ];
 
 export function CurrencySwitcher() {
-  const { selectedCurrency, setSelectedCurrency } = useCurrency();
+  const { selectedCurrency, setSelectedCurrency, isLocked } = useCurrency();
   const active = CURRENCIES.find((c) => c.code === selectedCurrency) ?? CURRENCIES[0];
+
+  if (isLocked) return null;
 
   return (
     <DropdownMenu>

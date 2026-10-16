@@ -1,4 +1,5 @@
 import type { Job, JobDetail } from "@/types/jobs/job";
+import type { Payment } from "@/types/billing/payment";
 
 export type JobCardData = Job | JobDetail;
 
@@ -6,7 +7,27 @@ export interface JobCardOptions {
   /** Used when `job.worker` is only an id (e.g. the create-job response). */
   workerName?: string;
   businessName?: string;
+  businessLogo?: string | null;
+  branchName?: string;
+  branchLocation?: string | null;
+  branchPhone?: string | null;
+  /** ISO currency code for amounts; defaults to KES. */
+  currency?: string | null;
 }
+
+const PAYMENT_STATUS_LABEL: Record<string, string> = {
+  unpaid: "Unpaid",
+  partially_paid: "Partially paid",
+  paid: "Paid",
+  refunded: "Refunded",
+};
+
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  cash: "Cash",
+  mpesa: "M-Pesa",
+  card: "Card",
+  bank_transfer: "Bank transfer",
+};
 
 const COLLECTION_LABEL: Record<string, string> = {
   walk_in: "Walk-in",
@@ -23,8 +44,8 @@ function escapeHtml(value: unknown): string {
     .replace(/'/g, "&#39;");
 }
 
-function money(value: string | number): string {
-  return `KES ${Number(value).toLocaleString()}`;
+function money(value: string | number, currency?: string | null): string {
+  return `${currency || "KES"} ${Number(value).toLocaleString()}`;
 }
 
 function qty(value: string): string {
@@ -49,14 +70,49 @@ function row(label: string, value: string | null | undefined): string {
   return `<div class="row"><span class="label">${escapeHtml(label)}</span><span>${escapeHtml(value)}</span></div>`;
 }
 
-export function renderJobCardHtml(job: JobCardData, opts: JobCardOptions = {}): string {
+type DocKind = "job_card" | "receipt";
+
+function renderPayments(payments: Payment[], currency?: string | null): string {
+  if (payments.length === 0) return "";
+  const rows = payments
+    .map((p) => {
+      const method = PAYMENT_METHOD_LABEL[p.method] ?? p.method;
+      const label = p.type === "payment" ? method : `${method} (${p.type})`;
+      const amount = p.type === "refund" ? `- ${money(p.amount, currency)}` : money(p.amount, currency);
+      return `
+        <tr>
+          <td>${escapeHtml(label)}<div class="muted">${escapeHtml(fmtDateTime(p.paid_at))}${p.transaction_code ? ` · ${escapeHtml(p.transaction_code)}` : ""}</div></td>
+          <td class="num">${escapeHtml(amount)}</td>
+        </tr>`;
+    })
+    .join("");
+  return `
+  <hr />
+  <table>
+    <thead><tr><th>Payment</th><th class="num">Amount</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function renderDocHtml(job: JobCardData, opts: JobCardOptions, kind: DocKind): string {
+  const isReceipt = kind === "receipt";
+  const title = isReceipt ? "Receipt" : "Job Card";
   const customer = job.customer;
   const vehicle = job.vehicle;
   const vehicleDesc = vehicle
     ? [vehicle.make, vehicle.model, vehicle.color].filter(Boolean).join(" · ")
     : "";
   const workerName = resolveWorkerName(job, opts);
+  const branchContact = [opts.branchLocation, opts.branchPhone].filter(Boolean).join(" · ");
   const discount = Number(job.discount_amount);
+  const balance = Math.max(Number(job.total_amount) - Number(job.amount_paid), 0);
+  const payments = "payments" in job ? job.payments ?? [] : [];
+  const receiptSummary = `
+  ${renderPayments(payments, opts.currency)}
+  <hr />
+  ${row("Amount paid", money(job.amount_paid, opts.currency))}
+  <div class="row total"><span>Balance</span><span>${escapeHtml(money(balance, opts.currency))}</span></div>
+  ${row("Payment status", PAYMENT_STATUS_LABEL[job.payment_status] ?? job.payment_status)}`;
 
   const items = (job.items ?? [])
     .map(
@@ -64,7 +120,8 @@ export function renderJobCardHtml(job: JobCardData, opts: JobCardOptions = {}): 
         <tr>
           <td>${escapeHtml(item.service?.name ?? item.description ?? "Service")}</td>
           <td class="num">${escapeHtml(qty(item.quantity))}</td>
-          <td class="num">${escapeHtml(money(item.line_total))}</td>
+          ${isReceipt ? `<td class="num">${escapeHtml(money(item.unit_price, opts.currency))}</td>` : ""}
+          <td class="num">${escapeHtml(money(item.line_total, opts.currency))}</td>
         </tr>`
     )
     .join("");
@@ -73,13 +130,15 @@ export function renderJobCardHtml(job: JobCardData, opts: JobCardOptions = {}): 
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Job Card ${escapeHtml(job.job_number)}</title>
+<title>${title} ${escapeHtml(job.job_number)}</title>
 <style>
   @page { size: 80mm auto; margin: 4mm; }
   * { box-sizing: border-box; }
   body { margin: 0; padding: 4mm; width: 80mm; font: 12px/1.4 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #000; background: #fff; }
   .center { text-align: center; }
   .business { font-size: 14px; font-weight: 700; }
+  .branch { font-size: 12px; font-weight: 600; }
+  .logo { max-width: 40mm; max-height: 20mm; object-fit: contain; margin-bottom: 4px; }
   .title { font-size: 11px; letter-spacing: 2px; font-weight: 600; margin-top: 2px; }
   .number { font-size: 22px; font-weight: 800; margin: 4px 0 2px; }
   .muted { color: #444; font-size: 11px; }
@@ -98,8 +157,11 @@ export function renderJobCardHtml(job: JobCardData, opts: JobCardOptions = {}): 
 </head>
 <body>
   <div class="center">
+    ${opts.businessLogo ? `<img class="logo" src="${escapeHtml(opts.businessLogo)}" alt="" />` : ""}
     ${opts.businessName ? `<div class="business">${escapeHtml(opts.businessName)}</div>` : ""}
-    <div class="title">JOB CARD</div>
+    ${opts.branchName ? `<div class="branch">${escapeHtml(opts.branchName)}</div>` : ""}
+    ${branchContact ? `<div class="muted">${escapeHtml(branchContact)}</div>` : ""}
+    <div class="title">${title.toUpperCase()}</div>
     <div class="number">${escapeHtml(job.job_number)}</div>
     <div class="muted">${escapeHtml(fmtDateTime(job.created_at))}</div>
   </div>
@@ -113,24 +175,36 @@ export function renderJobCardHtml(job: JobCardData, opts: JobCardOptions = {}): 
   ${row("Collection", COLLECTION_LABEL[job.collection_method] ?? job.collection_method)}
   ${row("Pickup address", job.pickup_address)}
   ${row("Worker", workerName)}
+  ${isReceipt && job.completed_at ? row("Completed", fmtDateTime(job.completed_at)) : ""}
+  ${isReceipt && job.collected_at ? row("Collected", fmtDateTime(job.collected_at)) : ""}
 
   <hr />
   <table>
-    <thead><tr><th>Service</th><th class="num">Qty</th><th class="num">Amount</th></tr></thead>
+    <thead><tr><th>Service</th><th class="num">Qty</th>${isReceipt ? `<th class="num">Price</th>` : ""}<th class="num">Amount</th></tr></thead>
     <tbody>${items}</tbody>
   </table>
 
   <hr />
-  ${discount > 0 ? row("Subtotal", money(job.subtotal)) + row("Discount", `- ${money(discount)}`) : ""}
-  <div class="row total"><span>Total</span><span>${escapeHtml(money(job.total_amount))}</span></div>
+  ${discount > 0 ? row("Subtotal", money(job.subtotal, opts.currency)) + row("Discount", `- ${money(discount, opts.currency)}`) : ""}
+  <div class="row total"><span>Total</span><span>${escapeHtml(money(job.total_amount, opts.currency))}</span></div>
+  ${isReceipt ? receiptSummary : ""}
 
   ${job.notes ? `<hr /><div class="muted">Notes</div><div class="notes">${escapeHtml(job.notes)}</div>` : ""}
 
   <hr />
-  <div class="center muted">Present this card when collecting.</div>
+  <div class="center muted">${isReceipt ? "Thank you for your business." : "Present this card when collecting."}</div>
 
 </body>
 </html>`;
+}
+
+export function renderJobCardHtml(job: JobCardData, opts: JobCardOptions = {}): string {
+  return renderDocHtml(job, opts, "job_card");
+}
+
+/** Like the job card, but adds unit prices, payments, amount paid and balance. */
+export function renderReceiptHtml(job: JobCardData, opts: JobCardOptions = {}): string {
+  return renderDocHtml(job, opts, "receipt");
 }
 
 /**
@@ -165,6 +239,10 @@ export function printHtml(html: string): void {
 
 export function printJobCard(job: JobCardData, opts?: JobCardOptions): void {
   printHtml(renderJobCardHtml(job, opts));
+}
+
+export function printReceipt(job: JobCardData, opts?: JobCardOptions): void {
+  printHtml(renderReceiptHtml(job, opts));
 }
 
 /**
