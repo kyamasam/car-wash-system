@@ -4,7 +4,8 @@ import * as React from "react";
 
 import { useServicesStore } from "@/stores/services-store";
 import type { Service } from "@/types/services/service";
-import type { ServiceCategory, ServiceUnit } from "@/types/services/service";
+import { SIZE_UNIT_LABELS } from "@/types/services/service";
+import type { CommissionType, ServiceCategory, ServiceUnit, SizeUnit } from "@/types/services/service";
 import {
   Dialog,
   DialogContent,
@@ -32,13 +33,17 @@ interface ServiceDialogProps {
 }
 
 export function ServiceDialog({ open, onOpenChange, service, onSaved }: ServiceDialogProps) {
-  const { createService, updateService } = useServicesStore();
+  const { createService, updateService, createServicePrice } = useServicesStore();
 
   const [name, setName] = React.useState("");
   const [code, setCode] = React.useState("");
   const [codeManuallyEdited, setCodeManuallyEdited] = React.useState(false);
   const [category, setCategory] = React.useState<ServiceCategory>("vehicle");
   const [unit, setUnit] = React.useState<ServiceUnit>("per_job");
+  const [sizeUnit, setSizeUnit] = React.useState<SizeUnit>("sq_ft");
+  const [rate, setRate] = React.useState("");
+  const [commissionValue, setCommissionValue] = React.useState("");
+  const [commissionType, setCommissionType] = React.useState<CommissionType>("fixed");
   const [isActive, setIsActive] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -50,6 +55,10 @@ export function ServiceDialog({ open, onOpenChange, service, onSaved }: ServiceD
       setCodeManuallyEdited(!!service);
       setCategory(service?.category ?? "vehicle");
       setUnit(service?.unit ?? "per_job");
+      setSizeUnit(service?.size_unit ?? "sq_ft");
+      setRate("");
+      setCommissionValue("");
+      setCommissionType("fixed");
       setIsActive(service?.is_active ?? true);
       setError(null);
     }
@@ -81,14 +90,41 @@ export function ServiceDialog({ open, onOpenChange, service, onSaved }: ServiceD
       setError("Name and code are required.");
       return;
     }
+    const isBySize = unit === "by_size";
+    const withRate = isBySize && !service;
+    if (withRate && (!rate.trim() || !commissionValue.trim())) {
+      setError("Rate and commission are required for By Size services.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      const payload = { name: name.trim(), code: code.trim(), category, unit, is_active: isActive };
+      const payload = {
+        name: name.trim(),
+        code: code.trim(),
+        category,
+        unit,
+        size_unit: isBySize ? sizeUnit : null,
+        is_active: isActive,
+      };
       if (service) {
         await updateService(service.id, payload);
       } else {
-        await createService(payload);
+        const created = await createService(payload);
+        if (withRate) {
+          try {
+            await createServicePrice({
+              service: created.id,
+              price: rate.trim(),
+              commission_value: commissionValue.trim(),
+              commission_type: commissionType,
+            });
+          } catch {
+            onSaved();
+            setError("Service created, but the rate failed to save. Add it from the service's prices.");
+            return;
+          }
+        }
       }
       onSaved();
       onOpenChange(false);
@@ -154,6 +190,72 @@ export function ServiceDialog({ open, onOpenChange, service, onSaved }: ServiceD
               </Select>
             </div>
           </div>
+          {unit === "by_size" && (
+            <div className="flex flex-col gap-4 rounded-md border bg-muted/30 p-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Measured in</Label>
+                <Select value={sizeUnit} onValueChange={(v) => setSizeUnit(v as SizeUnit)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(SIZE_UNIT_LABELS) as SizeUnit[]).map((u) => (
+                      <SelectItem key={u} value={u}>
+                        {SIZE_UNIT_LABELS[u]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {!service && (
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="svc-rate">Rate per {SIZE_UNIT_LABELS[sizeUnit]}</Label>
+                    <Input
+                      id="svc-rate"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={rate}
+                      onChange={(e) => setRate(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="svc-comm">Commission</Label>
+                      <Input
+                        id="svc-comm"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={commissionValue}
+                        onChange={(e) => setCommissionValue(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label>Type</Label>
+                      <Select
+                        value={commissionType}
+                        onValueChange={(v) => setCommissionType(v as CommissionType)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fixed">Amount</SelectItem>
+                          <SelectItem value="percentage">Percentage</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Checkbox
               id="svc-active"

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SIZE_UNIT_LABELS } from "@/types/services/service";
 import type { Service } from "@/types/services/service";
 
 interface ServicePriceModalProps {
@@ -42,6 +43,11 @@ export function ServicePriceModal({ service, onSelect, onClose }: ServicePriceMo
                 <span className="text-sm font-medium">{label}</span>
                 <span className="text-lg font-bold">
                   KES {Number(price.price).toLocaleString()}
+                  {service.unit === "by_size" && service.size_unit && (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {" "}/ {SIZE_UNIT_LABELS[service.size_unit]}
+                    </span>
+                  )}
                 </span>
               </button>
             );

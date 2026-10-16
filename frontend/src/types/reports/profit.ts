@@ -2,6 +2,7 @@ export interface ProfitTimeSeriesItem {
   period: string;
   revenue: string;
   expenses: string;
+  commissions: string;
   profit: string;
 }
 
@@ -13,6 +14,7 @@ export interface ProfitReport {
   refunds_total: string;
   net_revenue: string;
   total_expenses: string;
+  total_commissions_paid: string;
   net_profit: string;
   time_series: ProfitTimeSeriesItem[];
 }

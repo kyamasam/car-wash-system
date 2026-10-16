@@ -28,6 +28,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type {
+  CommissionEntry,
   CommissionEntryType,
   CommissionEntryStatus,
 } from "@/types/billing/commission";
@@ -57,6 +58,22 @@ const STATUS_VARIANT: Record<CommissionEntryStatus, React.ComponentProps<typeof 
 };
 
 const PAGE_SIZE = 10;
+
+function formatMoney(value: string | number) {
+  return parseFloat(String(value)).toLocaleString("en-KE", { minimumFractionDigits: 2 });
+}
+
+function formatCalculation(entry: CommissionEntry): { label: string; detail: string } | null {
+  if (!entry.commission_type || entry.commission_value == null) return null;
+  const value = parseFloat(entry.commission_value);
+  if (entry.commission_type === "percentage") {
+    return {
+      label: `${value}%`,
+      detail: entry.base_amount != null ? `of ${formatMoney(entry.base_amount)}` : "Percentage",
+    };
+  }
+  return { label: formatMoney(value), detail: "Fixed amount" };
+}
 
 export default function CommissionsPage() {
   const {
@@ -445,7 +462,16 @@ export default function CommissionsPage() {
                   Date
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">
+                  Worker
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">
                   Amount
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">
+                  Calculation
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">
+                  Customer Paid
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">
                   Type
@@ -468,6 +494,7 @@ export default function CommissionsPage() {
               {entries.map((entry) => {
                 const isSelectable = entry.status === "pending";
                 const isSelected = selectedIds.has(entry.id);
+                const calc = formatCalculation(entry);
                 return (
                   <tr
                     key={entry.id}
@@ -496,10 +523,51 @@ export default function CommissionsPage() {
                         })}
                       </p>
                     </td>
+                    <td className="px-4 py-3">
+                      {entry.worker_detail ? (
+                        <>
+                          <Link
+                            href={`/dashboard/workers/${entry.worker_detail.id}`}
+                            className="text-primary hover:underline"
+                          >
+                            {entry.worker_detail.name}
+                          </Link>
+                          {entry.worker_detail.phone && (
+                            <p className="text-xs text-muted-foreground/70">
+                              {entry.worker_detail.phone}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground/40">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 font-semibold tabular-nums">
-                      {parseFloat(entry.amount).toLocaleString("en-KE", {
-                        minimumFractionDigits: 2,
-                      })}
+                      {formatMoney(entry.amount)}
+                    </td>
+                    <td className="px-4 py-3 hidden sm:table-cell">
+                      {calc ? (
+                        <>
+                          <Badge variant="outline" className="text-xs tabular-nums">
+                            {calc.label}
+                          </Badge>
+                          <p className="text-xs text-muted-foreground/70 mt-0.5">{calc.detail}</p>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground/40">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell tabular-nums">
+                      {entry.job_detail ? (
+                        <>
+                          {formatMoney(entry.job_detail.amount_paid)}
+                          <p className="text-xs text-muted-foreground/70">
+                            of {formatMoney(entry.job_detail.total_amount)}
+                          </p>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground/40">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <Badge variant={TYPE_VARIANT[entry.type]} className="text-xs">

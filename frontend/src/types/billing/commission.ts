@@ -1,5 +1,6 @@
 export type CommissionEntryType = "earned" | "adjustment" | "reversal";
 export type CommissionEntryStatus = "pending" | "paid" | "void";
+export type CommissionCalcType = "fixed" | "percentage";
 
 export interface CommissionEntryJobDetail {
   id: string;
@@ -10,16 +11,26 @@ export interface CommissionEntryJobDetail {
   amount_paid: string;
 }
 
+export interface CommissionEntryWorkerDetail {
+  id: string;
+  name: string;
+  phone: string | null;
+}
+
 export interface CommissionEntry {
   id: string;
   job: string | null;
   job_detail: CommissionEntryJobDetail | null;
   worker: string;
+  worker_detail: CommissionEntryWorkerDetail | null;
   branch: string;
   payout: string | null;
   type: CommissionEntryType;
   status: CommissionEntryStatus;
   amount: string;
+  commission_type: CommissionCalcType | null;
+  commission_value: string | null;
+  base_amount: string | null;
   description: string;
   earned_at: string;
   paid_at: string | null;

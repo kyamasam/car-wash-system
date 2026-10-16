@@ -11,6 +11,7 @@ import {
   STATUS_LABEL,
 } from "@/components/jobs/job-card";
 import { PayJobModal } from "@/components/jobs/pay-job-modal";
+import { PrintJobCardButton } from "@/components/jobs/print-job-card-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -192,8 +193,8 @@ export default function JobDetailPage() {
         </div>
 
         {/* Status actions */}
-        {(transitions.length > 0 || canPay) && (
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+            <PrintJobCardButton job={job} size="sm" />
             {canPay && (
               <Button
                 variant="outline"
@@ -215,8 +216,7 @@ export default function JobDetailPage() {
                 {isUpdating ? <Loader2Icon className="size-4 animate-spin" /> : t.label}
               </Button>
             ))}
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Info grid */}

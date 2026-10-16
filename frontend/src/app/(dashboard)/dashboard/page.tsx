@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { JobCardGrid } from "@/components/jobs/job-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Car, CheckCircle2, Wallet } from "lucide-react";
-import type { ElementType } from "react";
 import { useJobsSummaryReport } from "@/hooks/reports/use-jobs-summary-report";
 import { useRevenueReport } from "@/hooks/reports/use-revenue-report";
 import { useJobsStore } from "@/stores/jobs-store";
-import { JobCardGrid } from "@/components/jobs/job-card";
+import { Activity, Car, CheckCircle2, Receipt, Wallet } from "lucide-react";
+import type { ElementType } from "react";
+import { useEffect } from "react";
 
 function formatKes(value: number) {
   return `KES ${value.toLocaleString("en-KE", { maximumFractionDigits: 0 })}`;
@@ -81,15 +81,25 @@ export default function DashboardPage() {
   const completedToday = summaryLoading
     ? undefined
     : String(
-        jobsSummary?.status_breakdown
-          .filter((s) => ["completed", "ready_for_collection", "collected"].includes(s.status))
-          .reduce((sum, s) => sum + s.count, 0) ?? 0
-      );
+      jobsSummary?.status_breakdown
+        .filter((s) => ["completed", "ready_for_collection", "collected"].includes(s.status))
+        .reduce((sum, s) => sum + s.count, 0) ?? 0
+    );
   const revenueToday = revenueLoading
     ? undefined
     : revenue
-    ? formatKes(parseFloat(revenue.net_revenue))
-    : "KES 0";
+      ? formatKes(parseFloat(revenue.net_revenue))
+      : "KES 0";
+  const expensesToday = revenueLoading
+    ? undefined
+    : revenue
+      ? formatKes(parseFloat(revenue.total_expenses))
+      : "KES 0";
+  const profitToday = revenueLoading
+    ? undefined
+    : revenue
+      ? formatKes(parseFloat(revenue.profit))
+      : "KES 0";
 
   const activeJobsList = jobsList?.results ?? [];
 
@@ -102,14 +112,8 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard
-          label="Jobs Today"
-          value={totalJobs ?? "—"}
-          sub="Total jobs checked in today"
-          icon={Car}
-          loading={summaryLoading}
-        />
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+
         <StatCard
           label="Active Jobs"
           value={activeJobs ?? "—"}
@@ -129,6 +133,20 @@ export default function DashboardPage() {
           value={revenueToday ?? "—"}
           sub="Payments received today"
           icon={Wallet}
+          loading={revenueLoading}
+        />
+        <StatCard
+          label="Expenses Today"
+          value={expensesToday ?? "—"}
+          sub="Expenses recorded today"
+          icon={Receipt}
+          loading={revenueLoading}
+        />
+        <StatCard
+          label="Profit Today"
+          value={profitToday ?? "—"}
+          sub="Profit (Revenue - Commissions - expenses)"
+          icon={Car}
           loading={revenueLoading}
         />
       </div>

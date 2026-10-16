@@ -177,3 +177,8 @@ class JobCreateSerializer(serializers.ModelSerializer):
         create_commission_entries(job=job, job_items_with_prices=items_with_prices)
 
         return job
+
+    def to_representation(self, instance):
+        # Respond with the full job (items, totals, job number) so clients can
+        # use it immediately, e.g. to print the job card.
+        return JobSerializer(instance, context=self.context).data

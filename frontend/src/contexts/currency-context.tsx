@@ -1,7 +1,6 @@
 "use client";
 
-import { useCurrencyRates } from "@/hooks/commons/use-currency-rates";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 export type Currency = "KES" | "USD" | "EUR";
 
@@ -25,7 +24,6 @@ const STORAGE_KEY = "sf_currency";
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const [selectedCurrency, setSelectedCurrencyState] = useState<Currency>("KES");
-  const { data: rates, isLoading } = useCurrencyRates();
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Currency | null;
@@ -34,19 +32,8 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // rates are stored as "1 USD = rate target_currency", so we need all currencies
-  // including KES to do the KES→target conversion: kes * rate[target] / rate[KES]
-  const rateMap = useMemo(() => {
-    const map: Record<string, number> = {};
-    if (rates) {
-      for (const r of rates) {
-        if (r.is_active) {
-          map[r.target_currency] = Number(r.rate);
-        }
-      }
-    }
-    return map;
-  }, [rates]);
+  // Rates endpoint removed; fall back to fixed USD-based rates (1 USD = rate[target]).
+  const rateMap: Record<string, number> = { USD: 1, KES: 130, EUR: 0.92 };
 
   function setSelectedCurrency(c: Currency) {
     setSelectedCurrencyState(c);
@@ -72,7 +59,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <CurrencyContext.Provider value={{ selectedCurrency, setSelectedCurrency, formatInCurrency, usdToKes, isLoading }}>
+    <CurrencyContext.Provider value={{ selectedCurrency, setSelectedCurrency, formatInCurrency, usdToKes, isLoading: false }}>
       {children}
     </CurrencyContext.Provider>
   );

@@ -22,6 +22,20 @@ class PricingUnit:
     ]
 
 
+class SizeUnit:
+    SQ_FT = "sq_ft"
+    SQ_M = "sq_m"
+    FT = "ft"
+    M = "m"
+
+    choices = [
+        (SQ_FT, "sq ft"),
+        (SQ_M, "sq m"),
+        (FT, "ft"),
+        (M, "m"),
+    ]
+
+
 class CommissionType:
     FIXED = "fixed"
     PERCENTAGE = "percentage"

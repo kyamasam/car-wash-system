@@ -20,7 +20,8 @@ export function ProfitReport({ filters }: Props) {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-28" />
           <Skeleton className="h-28" />
           <Skeleton className="h-28" />
           <Skeleton className="h-28" />
@@ -36,7 +37,7 @@ export function ProfitReport({ filters }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-1">
             <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground">Net Revenue</CardTitle>
@@ -53,6 +54,15 @@ export function ProfitReport({ filters }: Props) {
           <CardContent>
             <p className="text-2xl font-black">{fmt(data.total_expenses)}</p>
             <p className="text-xs text-muted-foreground mt-1">All recorded expenses</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground">Commissions Paid</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-black">{fmt(data.total_commissions_paid)}</p>
+            <p className="text-xs text-muted-foreground mt-1">By payout date</p>
           </CardContent>
         </Card>
         <Card>

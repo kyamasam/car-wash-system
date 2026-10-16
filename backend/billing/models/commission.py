@@ -2,6 +2,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 from billing.constants import PaymentMethod, CommissionEntryType, CommissionEntryStatus
+from services.constants import CommissionType
 
 
 class CommissionPayout(models.Model):
@@ -35,6 +36,12 @@ class CommissionEntry(models.Model):
     type = models.CharField(max_length=20, choices=CommissionEntryType.choices, default=CommissionEntryType.EARNED)
     status = models.CharField(max_length=20, choices=CommissionEntryStatus.choices, default=CommissionEntryStatus.PENDING)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    # Snapshot of how the amount was calculated (service price may change later)
+    commission_type = models.CharField(max_length=20, choices=CommissionType.choices, blank=True, null=True)
+    commission_value = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    base_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, blank=True, null=True, help_text="Line total the commission was based on"
+    )
     description = models.CharField(max_length=255, blank=True, null=True)
     earned_at = models.DateTimeField()
     paid_at = models.DateTimeField(null=True, blank=True)

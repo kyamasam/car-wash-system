@@ -1,3 +1,3 @@
-from .billing import PaymentViewSet, CommissionPayoutViewSet, CommissionEntryViewSet, ExpenseViewSet
+from .billing import PaymentViewSet, CommissionPayoutViewSet, CommissionEntryViewSet, ExpenseViewSet, ExpenseCategoryViewSet
 
-__all__ = ["PaymentViewSet", "CommissionPayoutViewSet", "CommissionEntryViewSet", "ExpenseViewSet"]
+__all__ = ["PaymentViewSet", "CommissionPayoutViewSet", "CommissionEntryViewSet", "ExpenseViewSet", "ExpenseCategoryViewSet"]

@@ -1,6 +1,14 @@
 export type ServiceCategory = "vehicle" | "carpet" | "other";
 export type ServiceUnit = "per_job" | "per_item" | "by_size";
+export type SizeUnit = "sq_ft" | "sq_m" | "ft" | "m";
 export type CommissionType = "fixed" | "percentage";
+
+export const SIZE_UNIT_LABELS: Record<SizeUnit, string> = {
+  sq_ft: "sq ft",
+  sq_m: "sq m",
+  ft: "ft",
+  m: "m",
+};
 
 export interface ServicePrice {
   id: string;
@@ -22,6 +30,7 @@ export interface Service {
   code: string;
   category: ServiceCategory;
   unit: ServiceUnit;
+  size_unit: SizeUnit | null;
   icon: string | null;
   is_active: boolean;
   created_at: string;
@@ -53,6 +62,7 @@ export interface CreateServicePayload {
   code: string;
   category: ServiceCategory;
   unit: ServiceUnit;
+  size_unit?: SizeUnit | null;
   icon?: string;
   is_active?: boolean;
 }

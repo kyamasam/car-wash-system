@@ -7,6 +7,8 @@ from django.db.models.functions import TruncDay, TruncWeek, TruncMonth
 from billing.models import Payment
 from billing.constants import PaymentType, PaymentMethod
 from .utils import resolve_branch_ids
+from .expense import get_expense_report
+from .commission_paid import get_commissions_paid
 
 
 _TRUNC_MAP = {
@@ -23,7 +25,8 @@ _ALL_METHODS = [
 ]
 
 
-def get_revenue_report(user, start_date: date, end_date: date, granularity: str = "day", branch_id=None) -> dict:
+def _get_payment_revenue(user, start_date: date, end_date: date, granularity: str = "day", branch_id=None) -> dict:
+    """Payment-only revenue (no expenses/commissions). Used by the profit report."""
     branch_ids = resolve_branch_ids(user, branch_id)
 
     base_qs = Payment.objects.filter(
@@ -83,4 +86,42 @@ def get_revenue_report(user, start_date: date, end_date: date, granularity: str 
             for row in time_series
         ],
         "method_breakdown": method_breakdown,
+    }
+
+
+def get_revenue_report(user, start_date: date, end_date: date, granularity: str = "day", branch_id=None) -> dict:
+    revenue = _get_payment_revenue(user, start_date, end_date, granularity, branch_id)
+    expenses = get_expense_report(user, start_date, end_date, granularity, branch_id)
+    # Commissions are deducted on the day they were paid out, not the day earned.
+    commissions = get_commissions_paid(user, start_date, end_date, granularity, branch_id)
+
+    total_expenses = expenses["total_expenses"]
+    total_commissions_paid = commissions["total"]
+
+    revenue_by_period = {row["period"]: row for row in revenue["time_series"]}
+    expense_by_period = {row["period"]: row["total"] for row in expenses["time_series"]}
+    commission_by_period = {row["period"]: row["total"] for row in commissions["time_series"]}
+
+    all_periods = sorted(set(revenue_by_period) | set(expense_by_period) | set(commission_by_period))
+    time_series = []
+    for p in all_periods:
+        row = revenue_by_period.get(p, {})
+        period_total = row.get("total") or Decimal("0")
+        period_expenses = expense_by_period.get(p, Decimal("0"))
+        period_commissions = commission_by_period.get(p, Decimal("0"))
+        time_series.append({
+            "period": p,
+            "total": period_total,
+            "count": row.get("count") or 0,
+            "expenses": period_expenses,
+            "commissions": period_commissions,
+            "profit": period_total - period_expenses - period_commissions,
+        })
+
+    return {
+        **revenue,
+        "total_expenses": total_expenses,
+        "total_commissions_paid": total_commissions_paid,
+        "profit": revenue["net_revenue"] - total_expenses - total_commissions_paid,
+        "time_series": time_series,
     }

@@ -40,6 +40,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentUser } from "@/hooks/auth/use-current-user";
 import { useServicesStore } from "@/stores/services-store";
+import { SIZE_UNIT_LABELS } from "@/types/services/service";
 import type { Service, ServiceCategory, ServicePrice } from "@/types/services/service";
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -71,7 +72,11 @@ export default function ServicesPage() {
   const [editingService, setEditingService] = React.useState<Service | undefined>();
 
   // prices management dialog
-  const [pricesDialogService, setPricesDialogService] = React.useState<Service | null>(null);
+  // Store only the id and derive the service from the latest list, so the
+  // dialog reflects prices as soon as the list is refetched
+  const [pricesDialogServiceId, setPricesDialogServiceId] = React.useState<string | null>(null);
+  const pricesDialogService =
+    servicesList?.results.find((s) => s.id === pricesDialogServiceId) ?? null;
 
   // price create/edit dialog
   const [priceDialogOpen, setPriceDialogOpen] = React.useState(false);
@@ -114,14 +119,6 @@ export default function ServicesPage() {
     try {
       await deleteServicePrice(price.id);
       reload();
-      // refresh prices in the open dialog
-      if (pricesDialogService) {
-        setPricesDialogService((prev) =>
-          prev
-            ? { ...prev, prices: prev.prices.filter((p) => p.id !== price.id) }
-            : prev
-        );
-      }
     } catch {
       // error toast handled by axios interceptor
     }
@@ -138,7 +135,7 @@ export default function ServicesPage() {
   }
 
   function openPricesDialog(service: Service) {
-    setPricesDialogService(service);
+    setPricesDialogServiceId(service.id);
   }
 
   function openAddPrice() {
@@ -153,15 +150,6 @@ export default function ServicesPage() {
 
   function handlePriceSaved() {
     reload();
-    // re-sync prices in open dialog after save
-    if (pricesDialogService) {
-      // prices data comes from the list refetch; close and reopen won't lose context
-      // we update the dialog service after list refresh
-      setTimeout(() => {
-        const refreshed = servicesList?.results.find((s) => s.id === pricesDialogService.id);
-        if (refreshed) setPricesDialogService(refreshed);
-      }, 300);
-    }
   }
 
   const services = servicesList?.results ?? [];
@@ -272,6 +260,7 @@ export default function ServicesPage() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground hidden md:table-cell capitalize">
                     {service.unit.replace("_", " ")}
+                    {service.unit === "by_size" && service.size_unit && ` (${SIZE_UNIT_LABELS[service.size_unit]})`}
                   </td>
                   <td className="px-4 py-3">
                     {service.prices.length === 0 ? (
@@ -395,7 +384,7 @@ export default function ServicesPage() {
       <Dialog
         open={!!pricesDialogService}
         onOpenChange={(open) => {
-          if (!open) setPricesDialogService(null);
+          if (!open) setPricesDialogServiceId(null);
         }}
       >
         <DialogContent className="max-w-2xl">
@@ -440,7 +429,14 @@ export default function ServicesPage() {
                           <td className="px-3 py-2">
                             {p.size_label ?? <span className="text-muted-foreground/50">—</span>}
                           </td>
-                          <td className="px-3 py-2 font-medium">{p.price}</td>
+                          <td className="px-3 py-2 font-medium">
+                            {p.price}
+                            {pricesDialogService.unit === "by_size" && pricesDialogService.size_unit && (
+                              <span className="text-xs font-normal text-muted-foreground">
+                                {" "}/ {SIZE_UNIT_LABELS[pricesDialogService.size_unit]}
+                              </span>
+                            )}
+                          </td>
                           <td className="px-3 py-2 text-muted-foreground">
                             {p.commission_value}{" "}
                             <span className="text-xs">({p.commission_type})</span>
@@ -489,6 +485,8 @@ export default function ServicesPage() {
           onOpenChange={setPriceDialogOpen}
           serviceId={pricesDialogService.id}
           serviceCategory={pricesDialogService.category}
+          serviceUnit={pricesDialogService.unit}
+          sizeUnit={pricesDialogService.size_unit}
           price={editingPrice}
           onSaved={handlePriceSaved}
         />

@@ -41,6 +41,9 @@ def create_commission_entries(job, job_items_with_prices):
                 type=CommissionEntryType.EARNED,
                 status=CommissionEntryStatus.PENDING,
                 amount=amount,
+                commission_type=service_price.commission_type,
+                commission_value=service_price.commission_value,
+                base_amount=job_item.line_total,
                 description=f"{job_item.job.job_number} — {service_price.service.name}",
                 earned_at=timezone.now(),
             )

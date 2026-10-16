@@ -26,6 +26,7 @@ const SEGMENT_MAP: Record<string, string> = {
   vps: "VPS Instances",
   billing: "Billing",
   commissions: "Commissions",
+  expenses: "Expenses",
   settings: "Settings",
 };
 

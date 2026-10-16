@@ -11,6 +11,12 @@ import type {
   CommissionEntryListParams,
   CommissionEntryListResponse,
 } from "@/types/billing/commission";
+import type {
+  CreateExpensePayload,
+  Expense,
+  ExpenseListParams,
+  ExpenseListResponse,
+} from "@/types/billing/expense";
 
 const buildQuery = (params: object): string => {
   const qs = new URLSearchParams();
@@ -41,6 +47,15 @@ interface BillingStore {
   bulkMarkPaidLoading: boolean;
   bulkMarkPaidError: string | null;
   bulkMarkPaid: (ids: string[], paidAt?: string) => Promise<boolean>;
+
+  expensesList: ExpenseListResponse | null;
+  expensesListLoading: boolean;
+  expensesListError: string | null;
+  fetchExpenses: (params?: ExpenseListParams) => Promise<void>;
+
+  createExpenseLoading: boolean;
+  createExpenseError: string | null;
+  createExpense: (payload: CreateExpensePayload) => Promise<Expense | null>;
 }
 
 export const useBillingStore = create<BillingStore>((set) => ({
@@ -108,6 +123,46 @@ export const useBillingStore = create<BillingStore>((set) => ({
       const message = err instanceof Error ? err.message : "Failed to mark commissions as paid";
       set({ bulkMarkPaidError: message, bulkMarkPaidLoading: false });
       return false;
+    }
+  },
+
+  expensesList: null,
+  expensesListLoading: false,
+  expensesListError: null,
+
+  fetchExpenses: async (params) => {
+    set({ expensesListLoading: true, expensesListError: null });
+    try {
+      const query = buildQuery(params ?? {});
+      const { data } = await axiosInstance.get<ExpenseListResponse>(`/billing/expenses/${query}`);
+      set({ expensesList: data, expensesListLoading: false });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load expenses";
+      set({ expensesListError: message, expensesListLoading: false });
+    }
+  },
+
+  createExpenseLoading: false,
+  createExpenseError: null,
+
+  createExpense: async (payload) => {
+    set({ createExpenseLoading: true, createExpenseError: null });
+    try {
+      let body: CreateExpensePayload | FormData = payload;
+      if (payload.receipt) {
+        const form = new FormData();
+        Object.entries(payload).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) form.append(key, value);
+        });
+        body = form;
+      }
+      const { data } = await axiosInstance.post<Expense>("/billing/expenses/", body);
+      set({ createExpenseLoading: false });
+      return data;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to record expense";
+      set({ createExpenseError: message, createExpenseLoading: false });
+      return null;
     }
   },
 }));

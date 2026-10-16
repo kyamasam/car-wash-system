@@ -20,11 +20,13 @@ import { useCustomersStore } from "@/stores/customers-store";
 import { useVehiclesStore } from "@/stores/vehicles-store";
 import { useWorkersStore } from "@/stores/workers-store";
 import { useServicesStore } from "@/stores/services-store";
+import { queueJobCardPrint } from "@/lib/print/job-card";
 
 import { SearchCombobox } from "@/components/ui/search-combobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 import { AddWorkerButton } from "@/components/jobs/add-worker-dialog";
@@ -34,6 +36,7 @@ import type { ServiceLineItem } from "@/components/jobs/service-items-list";
 import type { CreateJobPayload, Job } from "@/types/jobs/job";
 import type { Customer } from "@/types/customers/customer";
 import type { Worker } from "@/types/workers/worker";
+import { SIZE_UNIT_LABELS } from "@/types/services/service";
 import type { Service, ServiceCategory } from "@/types/services/service";
 
 const CATEGORIES: { value: "all" | ServiceCategory; label: string }[] = [
@@ -71,6 +74,7 @@ export function CreateJobForm() {
   const [discount, setDiscount] = React.useState("");
   const [activeCategory, setActiveCategory] = React.useState<"all" | ServiceCategory>("all");
   const [priceModalService, setPriceModalService] = React.useState<Service | null>(null);
+  const [printCard, setPrintCard] = React.useState(true);
 
   // Customer phone search state
   const [phoneQuery, setPhoneQuery] = React.useState("");
@@ -152,7 +156,8 @@ export function CreateJobForm() {
         serviceId: service.id,
         serviceName: service.name,
         serviceCode: service.code,
-        quantity: 1,
+        // By-size items start empty so staff must enter the measured size
+        quantity: service.unit === "by_size" ? 0 : 1,
         selectedPriceId: priceId,
       },
     ]);
@@ -187,6 +192,13 @@ export function CreateJobForm() {
     );
   }
 
+  function setQuantity(serviceId: string, value: string) {
+    const quantity = Math.max(0, Number(value) || 0);
+    setServiceItems((prev) =>
+      prev.map((item) => (item.serviceId === serviceId ? { ...item, quantity } : item))
+    );
+  }
+
   function removeItem(serviceId: string) {
     setServiceItems((prev) => prev.filter((i) => i.serviceId !== serviceId));
   }
@@ -200,7 +212,10 @@ export function CreateJobForm() {
   const { mutate: createJob, isPending } = useApiMutation<Job, CreateJobPayload>({
     method: "POST",
     url: "/jobs/",
-    onSuccess: () => {
+    onSuccess: (job) => {
+      if (printCard) {
+        queueJobCardPrint(job, { workerName: allWorkers.find((w) => w.id === workerId)?.name });
+      }
       router.push("/dashboard/jobs");
     },
   });
@@ -236,7 +251,8 @@ export function CreateJobForm() {
     createJob(payload);
   }
 
-  const canSubmit = serviceItems.length > 0 && !isPending;
+  const canSubmit =
+    serviceItems.length > 0 && serviceItems.every((item) => item.quantity > 0) && !isPending;
   const showVehicleSelector = !!customerId || showCreateForm;
   const showSearchResults = !customerId && phoneQuery.length >= 2;
 
@@ -564,12 +580,22 @@ export function CreateJobForm() {
                     const priceLabel = price
                       ? `KES ${(Number(price.price) * item.quantity).toLocaleString()}`
                       : "—";
+                    const sizeUnitLabel =
+                      service?.unit === "by_size" && service.size_unit
+                        ? SIZE_UNIT_LABELS[service.size_unit]
+                        : null;
 
                     return (
                       <div key={item.serviceId} className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium leading-tight truncate">{item.serviceName}</p>
-                          {price ? (
+                          {price && sizeUnitLabel ? (
+                            <p className="text-xs text-muted-foreground">
+                              {item.quantity > 0
+                                ? `${item.quantity} ${sizeUnitLabel} × KES ${Number(price.price).toLocaleString()} = ${priceLabel}`
+                                : `Enter size · KES ${Number(price.price).toLocaleString()} / ${sizeUnitLabel}`}
+                            </p>
+                          ) : price ? (
                             <p className="text-xs text-muted-foreground capitalize">
                               {price.size_label ?? price.vehicle_category ?? "Default"} · {priceLabel}
                             </p>
@@ -577,6 +603,22 @@ export function CreateJobForm() {
                             <p className="text-xs text-muted-foreground">{priceLabel}</p>
                           )}
                         </div>
+                        {sizeUnitLabel ? (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            step="0.01"
+                            placeholder="0"
+                            aria-label={`Size in ${sizeUnitLabel}`}
+                            value={item.quantity > 0 ? item.quantity : ""}
+                            onChange={(e) => setQuantity(item.serviceId, e.target.value)}
+                            className="h-7 w-20 text-right text-sm tabular-nums"
+                          />
+                          <span className="text-xs text-muted-foreground">{sizeUnitLabel}</span>
+                        </div>
+                        ) : (
                         <div className="flex items-center gap-1 shrink-0">
                           <Button
                             type="button"
@@ -599,6 +641,7 @@ export function CreateJobForm() {
                             <PlusIcon />
                           </Button>
                         </div>
+                        )}
                         <Button
                           type="button"
                           variant="ghost"
@@ -722,6 +765,17 @@ export function CreateJobForm() {
             {serviceItems.length === 0 && (
               <p className="text-xs text-destructive text-center">At least one service is required.</p>
             )}
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="print-job-card"
+                checked={printCard}
+                onCheckedChange={(checked) => setPrintCard(checked === true)}
+              />
+              <Label htmlFor="print-job-card" className="cursor-pointer font-normal">
+                Print job card
+              </Label>
+            </div>
 
             <div className="flex gap-2">
               <Link href="/dashboard/jobs" className="flex-1">

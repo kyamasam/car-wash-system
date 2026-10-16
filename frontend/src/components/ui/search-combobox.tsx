@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CheckIcon, ChevronDownIcon, Loader2Icon, SearchIcon, XIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, Loader2Icon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,8 @@ interface SearchComboboxProps {
   className?: string;
   clearable?: boolean;
   emptyText?: string;
+  onCreate?: (label: string) => void | Promise<void>;
+  creating?: boolean;
 }
 
 export function SearchCombobox({
@@ -39,6 +41,8 @@ export function SearchCombobox({
   className,
   clearable = true,
   emptyText = "No results found.",
+  onCreate,
+  creating = false,
 }: SearchComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -54,6 +58,19 @@ export function SearchCombobox({
   }, [items, search]);
 
   const selected = items.find((item) => item.value === value);
+
+  const trimmedSearch = search.trim();
+  const canCreate =
+    !!onCreate &&
+    !!trimmedSearch &&
+    !items.some((item) => item.label.toLowerCase() === trimmedSearch.toLowerCase());
+
+  async function handleCreate() {
+    if (!onCreate || !canCreate || creating) return;
+    await onCreate(trimmedSearch);
+    setOpen(false);
+    setSearch("");
+  }
 
   function handleSelect(itemValue: string) {
     onSelect(itemValue);
@@ -114,11 +131,17 @@ export function SearchCombobox({
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && canCreate) {
+                e.preventDefault();
+                void handleCreate();
+              }
+            }}
             autoFocus
           />
         </div>
         <div className="max-h-56 overflow-y-auto">
-          {filtered.length === 0 ? (
+          {filtered.length === 0 && !canCreate ? (
             <div className="px-3 py-4 text-center text-sm text-muted-foreground">
               {loading ? "Loading..." : emptyText}
             </div>
@@ -148,6 +171,26 @@ export function SearchCombobox({
                   )}
                 </button>
               ))}
+              {canCreate && (
+                <button
+                  type="button"
+                  onClick={() => void handleCreate()}
+                  disabled={creating}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors",
+                    "hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+                  )}
+                >
+                  {creating ? (
+                    <Loader2Icon className="size-4 shrink-0 animate-spin text-muted-foreground" />
+                  ) : (
+                    <PlusIcon className="size-4 shrink-0 text-primary" />
+                  )}
+                  <span className="flex-1 truncate text-left">
+                    Create &ldquo;{trimmedSearch}&rdquo;
+                  </span>
+                </button>
+              )}
             </div>
           )}
         </div>

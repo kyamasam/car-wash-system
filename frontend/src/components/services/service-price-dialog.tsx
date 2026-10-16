@@ -20,13 +20,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useServicesStore } from "@/stores/services-store";
-import type { CommissionType, ServiceCategory, ServicePrice } from "@/types/services/service";
+import { SIZE_UNIT_LABELS } from "@/types/services/service";
+import type {
+  CommissionType,
+  ServiceCategory,
+  ServicePrice,
+  ServiceUnit,
+  SizeUnit,
+} from "@/types/services/service";
 
 interface ServicePriceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   serviceId: string;
   serviceCategory: ServiceCategory;
+  serviceUnit?: ServiceUnit;
+  sizeUnit?: SizeUnit | null;
   price?: ServicePrice;
   onSaved: () => void;
 }
@@ -36,10 +45,14 @@ export function ServicePriceDialog({
   onOpenChange,
   serviceId,
   serviceCategory,
+  serviceUnit,
+  sizeUnit,
   price,
   onSaved,
 }: ServicePriceDialogProps) {
   const { createServicePrice, updateServicePrice } = useServicesStore();
+  const isBySize = serviceUnit === "by_size";
+  const rateLabel = isBySize && sizeUnit ? `Rate per ${SIZE_UNIT_LABELS[sizeUnit]}` : "Price";
 
   const [vehicleCategory, setVehicleCategory] = React.useState("");
   const [sizeLabel, setSizeLabel] = React.useState("");
@@ -72,7 +85,7 @@ export function ServicePriceDialog({
       const payload = {
         service: serviceId,
         vehicle_category: vehicleCategory.trim() || undefined,
-        size_label: sizeLabel.trim() || undefined,
+        size_label: isBySize ? undefined : sizeLabel.trim() || undefined,
         price: priceValue.trim(),
         commission_value: commissionValue.trim(),
         commission_type: commissionType,
@@ -109,17 +122,19 @@ export function ServicePriceDialog({
               />
             </div>
           )}
+          {!isBySize && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="sp-size">Size Label</Label>
+              <Input
+                id="sp-size"
+                placeholder="e.g. small, large…"
+                value={sizeLabel}
+                onChange={(e) => setSizeLabel(e.target.value)}
+              />
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="sp-size">Size Label</Label>
-            <Input
-              id="sp-size"
-              placeholder="e.g. small, large…"
-              value={sizeLabel}
-              onChange={(e) => setSizeLabel(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="sp-price">Price</Label>
+            <Label htmlFor="sp-price">{rateLabel}</Label>
             <Input
               id="sp-price"
               type="number"

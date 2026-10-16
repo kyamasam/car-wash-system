@@ -8,7 +8,6 @@ import { TopNavigation } from "./top-navigation";
 
 // Only two width tokens — everything else comes from globals.css
 import "@/styles/sidebar.css";
-import { PendingInvitationsBanner } from "./pending-invitations-banner";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -53,7 +52,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <main className="flex-1 px-2 py-2 overflow-y-auto">
-            <PendingInvitationsBanner />
             {children}
           </main>
         </div>

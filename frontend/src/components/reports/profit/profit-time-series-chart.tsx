@@ -30,13 +30,14 @@ export function ProfitTimeSeriesChart({ data, granularity }: Props) {
     period: formatPeriod(row.period, granularity),
     Revenue: Number(row.revenue),
     Expenses: Number(row.expenses),
+    Commissions: Number(row.commissions),
     Profit: Number(row.profit),
   }));
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold">Revenue vs Expenses vs Profit</CardTitle>
+        <CardTitle className="text-sm font-semibold">Revenue vs Costs vs Profit</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={260}>
@@ -49,6 +50,10 @@ export function ProfitTimeSeriesChart({ data, granularity }: Props) {
               <linearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
                 <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="comGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="profGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2} />
@@ -70,6 +75,7 @@ export function ProfitTimeSeriesChart({ data, granularity }: Props) {
             <Legend iconSize={10} wrapperStyle={{ fontSize: 12 }} />
             <Area type="monotone" dataKey="Revenue" stroke="#6366f1" strokeWidth={2} fill="url(#revGrad)" />
             <Area type="monotone" dataKey="Expenses" stroke="#ef4444" strokeWidth={2} fill="url(#expGrad)" />
+            <Area type="monotone" dataKey="Commissions" stroke="#f59e0b" strokeWidth={2} fill="url(#comGrad)" />
             <Area type="monotone" dataKey="Profit" stroke="#22c55e" strokeWidth={2} fill="url(#profGrad)" />
           </AreaChart>
         </ResponsiveContainer>

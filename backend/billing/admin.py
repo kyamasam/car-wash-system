@@ -1,5 +1,5 @@
 from django.contrib import admin
-from billing.models import Payment, CommissionPayout, CommissionEntry, Expense
+from billing.models import Payment, CommissionPayout, CommissionEntry, Expense, ExpenseCategory
 
 
 @admin.register(Payment)
@@ -23,8 +23,16 @@ class CommissionEntryAdmin(admin.ModelAdmin):
     search_fields = ("worker__name",)
 
 
+@admin.register(ExpenseCategory)
+class ExpenseCategoryAdmin(admin.ModelAdmin):
+    list_display = ("name", "business", "is_active", "created_at")
+    list_filter = ("business", "is_active")
+    search_fields = ("name",)
+
+
 @admin.register(Expense)
 class ExpenseAdmin(admin.ModelAdmin):
-    list_display = ("category", "amount", "method", "incurred_on", "branch")
+    list_display = ("name", "category", "amount", "method", "incurred_on", "branch")
     list_filter = ("category", "method", "branch")
-    search_fields = ("category", "description")
+    search_fields = ("name", "category__name", "description")
+    autocomplete_fields = ("category",)

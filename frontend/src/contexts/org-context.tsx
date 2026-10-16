@@ -1,8 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { useOrganizations } from "@/hooks/org/use-organizations";
-import { useCurrentUser } from "@/hooks/auth/use-current-user";
+import { createContext, useContext, useState } from "react";
 import { useSetCurrentOrg } from "@/hooks/org/use-set-current-org";
 import type { Organization } from "@/types/org/organization";
 
@@ -18,26 +16,9 @@ interface OrgContextValue {
 const OrgContext = createContext<OrgContextValue | null>(null);
 
 export function OrgProvider({ children }: { children: React.ReactNode }) {
-  const { data: orgs = [], isLoading: orgsLoading } = useOrganizations();
-  const { data: currentUser, isLoading: userLoading } = useCurrentUser();
+  const orgs: Organization[] = [];
   const [activeOrg, setActiveOrg] = useState<Organization | null>(null);
   const { mutate: persistCurrentOrg, isPending: isSwitching } = useSetCurrentOrg();
-
-  useEffect(() => {
-    if (!orgs.length) return;
-
-    const currentOrgSlug = currentUser?.current_organization?.slug;
-    if (currentOrgSlug) {
-      const matched = orgs.find((o) => o.slug === currentOrgSlug);
-      if (matched) {
-        setActiveOrg((prev) => (prev?.id === matched.id ? prev : matched));
-        return;
-      }
-    }
-
-    // Fall back to first org if none persisted
-    setActiveOrg((prev) => prev ?? orgs[0]);
-  }, [orgs, currentUser?.current_organization?.slug]);
 
   const switchOrg = (org: Organization) => {
     setActiveOrg(org);
@@ -51,7 +32,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
         setActiveOrg,
         switchOrg,
         orgs,
-        isLoading: orgsLoading || userLoading,
+        isLoading: false,
         isSwitching,
       }}
     >

@@ -2,6 +2,9 @@ export interface RevenueTimeSeriesItem {
   period: string;
   total: string;
   count: number;
+  expenses: string;
+  commissions: string;
+  profit: string;
 }
 
 export interface RevenueMethodBreakdown {
@@ -18,6 +21,9 @@ export interface RevenueReport {
   gross_revenue: string;
   refunds_total: string;
   net_revenue: string;
+  total_expenses: string;
+  total_commissions_paid: string;
+  profit: string;
   total_jobs: number;
   time_series: RevenueTimeSeriesItem[];
   method_breakdown: RevenueMethodBreakdown[];

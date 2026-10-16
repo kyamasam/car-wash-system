@@ -30,6 +30,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { resolvePreset } from "@/types/reports/filters";
+import { printQueuedJobCard } from "@/lib/print/job-card";
 import { JobCardGrid } from "@/components/jobs/job-card";
 import {
   STATUS_LABEL,
@@ -69,6 +70,12 @@ export default function JobsPage() {
   const [customTo, setCustomTo] = React.useState("");
   const [fromOpen, setFromOpen] = React.useState(false);
   const [toOpen, setToOpen] = React.useState(false);
+
+  // Print a job card queued by the create-job form once this page has painted
+  React.useEffect(() => {
+    const t = setTimeout(printQueuedJobCard, 300);
+    return () => clearTimeout(t);
+  }, []);
 
   function getDateRange(): { date_from?: string; date_to?: string } {
     if (!datePreset) return {};

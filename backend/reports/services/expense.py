@@ -26,14 +26,14 @@ def get_expense_report(user, start_date: date, end_date: date, granularity: str 
     total_expenses = qs.aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
     by_category_qs = (
-        qs.values("category")
+        qs.values("category__name")
         .annotate(total=Sum("amount"), count=Count("id"))
         .order_by("-total")
     )
 
     by_category = [
         {
-            "category": row["category"],
+            "category": row["category__name"] or "Uncategorized",
             "total": row["total"],
             "count": row["count"],
             "percentage": float(row["total"] / total_expenses * 100) if total_expenses else 0.0,

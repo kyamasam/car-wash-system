@@ -4,7 +4,7 @@ from services.models import Service, ServicePrice
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "category", "unit", "icon_preview", "is_active")
+    list_display = ("name", "code", "category", "unit", "size_unit", "icon_preview", "is_active")
     list_filter = ("category", "unit", "is_active")
     search_fields = ("name", "code")
     readonly_fields = ("icon_preview",)

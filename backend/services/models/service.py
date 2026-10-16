@@ -2,7 +2,7 @@ import uuid
 from django.db import models
 from django.conf import settings
 from commons.models import UtilColumnsModel
-from services.constants import ServiceCategory, PricingUnit, CommissionType
+from services.constants import ServiceCategory, PricingUnit, SizeUnit, CommissionType
 
 
 class Service(UtilColumnsModel):
@@ -11,6 +11,10 @@ class Service(UtilColumnsModel):
     code = models.CharField(max_length=30, unique=True)
     category = models.CharField(max_length=20, choices=ServiceCategory.choices)
     unit = models.CharField(max_length=20, choices=PricingUnit.choices, default=PricingUnit.PER_JOB)
+    size_unit = models.CharField(
+        max_length=10, choices=SizeUnit.choices, null=True, blank=True,
+        help_text="Measurement unit for by_size services; price is the rate per this unit"
+    )
     icon = models.ImageField(upload_to="services/icons/", null=True, blank=True)
 
     def __str__(self):

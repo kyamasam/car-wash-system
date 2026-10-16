@@ -21,7 +21,9 @@ export function RevenueReport({ filters }: Props) {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <Skeleton className="h-28" />
+          <Skeleton className="h-28" />
           <Skeleton className="h-28" />
           <Skeleton className="h-28" />
           <Skeleton className="h-28" />
@@ -36,7 +38,7 @@ export function RevenueReport({ filters }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-1">
             <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground">Gross Revenue</CardTitle>
@@ -62,6 +64,24 @@ export function RevenueReport({ filters }: Props) {
           <CardContent>
             <p className="text-2xl font-black">{fmt(data.refunds_total)}</p>
             <p className="text-xs text-muted-foreground mt-1">Total refunded</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground">Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-black">{fmt(data.total_expenses)}</p>
+            <p className="text-xs text-muted-foreground mt-1">+ {fmt(data.total_commissions_paid)} commissions paid</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground">Profit</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className={`text-2xl font-black ${Number(data.profit) < 0 ? "text-destructive" : ""}`}>{fmt(data.profit)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Net revenue − expenses − commissions</p>
           </CardContent>
         </Card>
       </div>

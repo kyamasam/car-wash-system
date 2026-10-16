@@ -2,14 +2,15 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db import transaction
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema_view, extend_schema
 from django_filters.rest_framework import DjangoFilterBackend
 
 from commons.mixins import BranchScopedMixin
-from billing.models import Payment, CommissionPayout, CommissionEntry, Expense
-from billing.serializers import PaymentSerializer, CommissionPayoutSerializer, CommissionEntrySerializer, ExpenseSerializer, BulkMarkPaidSerializer
+from billing.models import Payment, CommissionPayout, CommissionEntry, Expense, ExpenseCategory
+from billing.serializers import PaymentSerializer, CommissionPayoutSerializer, CommissionEntrySerializer, ExpenseSerializer, ExpenseCategorySerializer, BulkMarkPaidSerializer
 from billing.services.payment import record_payment
 from billing.filters import CommissionEntryFilter
 from billing.constants import CommissionEntryStatus
@@ -76,5 +77,25 @@ class CommissionEntryViewSet(BranchScopedMixin, ModelViewSet):
     create=extend_schema(tags=["billing"]), update=extend_schema(tags=["billing"]),
     partial_update=extend_schema(tags=["billing"]), destroy=extend_schema(tags=["billing"]))
 class ExpenseViewSet(BranchScopedMixin, ModelViewSet):
-    queryset = Expense.objects.select_related("branch").all()
+    queryset = Expense.objects.select_related("branch", "category").all()
     serializer_class = ExpenseSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+
+@extend_schema_view(list=extend_schema(tags=["billing"]), retrieve=extend_schema(tags=["billing"]),
+    create=extend_schema(tags=["billing"]), update=extend_schema(tags=["billing"]),
+    partial_update=extend_schema(tags=["billing"]), destroy=extend_schema(tags=["billing"]))
+class ExpenseCategoryViewSet(ModelViewSet):
+    queryset = ExpenseCategory.objects.all()
+    serializer_class = ExpenseCategorySerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        if user.is_superuser:
+            return qs
+        return qs.filter(business=user.business_id)
+
+    def perform_create(self, serializer):
+        serializer.save(business_id=self.request.user.business_id)
