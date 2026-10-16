@@ -22,6 +22,7 @@ import { useWorkersStore } from "@/stores/workers-store";
 import { useServicesStore } from "@/stores/services-store";
 import { queueJobCardPrint } from "@/lib/print/job-card";
 import { useJobCardOptions } from "@/hooks/jobs/use-job-card-options";
+import { useCurrentBusiness } from "@/hooks/commons/use-business";
 
 import { SearchCombobox } from "@/components/ui/search-combobox";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ import type { ServiceLineItem } from "@/components/jobs/service-items-list";
 import type { CreateJobPayload, Job } from "@/types/jobs/job";
 import type { Customer } from "@/types/customers/customer";
 import type { Worker } from "@/types/workers/worker";
-import { SIZE_UNIT_LABELS } from "@/types/services/service";
+import { DIMENSION_UNIT_LABELS, SIZE_UNIT_LABELS } from "@/types/services/service";
 import type { Service, ServiceCategory } from "@/types/services/service";
 
 const CATEGORIES: { value: "all" | ServiceCategory; label: string }[] = [
@@ -75,7 +76,10 @@ export function CreateJobForm() {
   const [discount, setDiscount] = React.useState("");
   const [activeCategory, setActiveCategory] = React.useState<"all" | ServiceCategory>("all");
   const [priceModalService, setPriceModalService] = React.useState<Service | null>(null);
-  const [printCard, setPrintCard] = React.useState(true);
+  // Follows the business default until the user toggles it.
+  const { data: business } = useCurrentBusiness();
+  const [printCardOverride, setPrintCard] = React.useState<boolean | null>(null);
+  const printCard = printCardOverride ?? business?.print_job_card_by_default ?? true;
 
   // Customer phone search state
   const [phoneQuery, setPhoneQuery] = React.useState("");
@@ -193,10 +197,14 @@ export function CreateJobForm() {
     );
   }
 
-  function setQuantity(serviceId: string, value: string) {
-    const quantity = Math.max(0, Number(value) || 0);
+  function setDimension(serviceId: string, field: "length" | "width", value: string) {
+    const n = Math.max(0, Number(value) || 0);
     setServiceItems((prev) =>
-      prev.map((item) => (item.serviceId === serviceId ? { ...item, quantity } : item))
+      prev.map((item) => {
+        if (item.serviceId !== serviceId) return item;
+        const next = { ...item, [field]: n };
+        return { ...next, quantity: (next.length ?? 0) * (next.width ?? 0) };
+      })
     );
   }
 
@@ -235,6 +243,9 @@ export function CreateJobForm() {
       items: serviceItems.map((item) => ({
         service: item.serviceId,
         quantity: String(item.quantity),
+        ...(item.length && item.width
+          ? { length: String(item.length), width: String(item.width) }
+          : {}),
         ...(item.selectedPriceId ? { service_price: item.selectedPriceId } : {}),
       })),
     };
@@ -590,6 +601,11 @@ export function CreateJobForm() {
                       service?.unit === "by_size" && service.size_unit
                         ? SIZE_UNIT_LABELS[service.size_unit]
                         : null;
+                    const dimensionUnitLabel =
+                      service?.unit === "by_size" && service.size_unit
+                        ? DIMENSION_UNIT_LABELS[service.size_unit]
+                        : null;
+                    const area = Number(item.quantity.toFixed(2));
 
                     return (
                       <div key={item.serviceId} className="space-y-2 rounded-md border bg-muted/30 px-3 py-2">
@@ -599,7 +615,7 @@ export function CreateJobForm() {
                             {price && sizeUnitLabel ? (
                               <p className="text-xs text-muted-foreground">
                                 {item.quantity > 0
-                                  ? `${item.quantity} ${sizeUnitLabel} × KES ${Number(price.price).toLocaleString()} = ${priceLabel}`
+                                  ? `${item.length} × ${item.width} = ${area.toLocaleString()} ${sizeUnitLabel} × KES ${Number(price.price).toLocaleString()} = ${priceLabel}`
                                   : `Enter size · KES ${Number(price.price).toLocaleString()} / ${sizeUnitLabel}`}
                               </p>
                             ) : price ? (
@@ -627,13 +643,25 @@ export function CreateJobForm() {
                             inputMode="decimal"
                             min="0"
                             step="0.01"
-                            placeholder="0"
-                            aria-label={`Size in ${sizeUnitLabel}`}
-                            value={item.quantity > 0 ? item.quantity : ""}
-                            onChange={(e) => setQuantity(item.serviceId, e.target.value)}
-                            className="h-8 w-32 text-right text-sm tabular-nums"
+                            placeholder="L"
+                            aria-label={`Length in ${dimensionUnitLabel}`}
+                            value={item.length ? item.length : ""}
+                            onChange={(e) => setDimension(item.serviceId, "length", e.target.value)}
+                            className="h-8 w-20 text-right text-sm tabular-nums"
                           />
-                          <span className="text-xs text-muted-foreground">{sizeUnitLabel}</span>
+                          <span className="text-xs text-muted-foreground">×</span>
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            step="0.01"
+                            placeholder="W"
+                            aria-label={`Width in ${dimensionUnitLabel}`}
+                            value={item.width ? item.width : ""}
+                            onChange={(e) => setDimension(item.serviceId, "width", e.target.value)}
+                            className="h-8 w-20 text-right text-sm tabular-nums"
+                          />
+                          <span className="text-xs text-muted-foreground">{dimensionUnitLabel}</span>
                         </div>
                         ) : (
                         <div className="flex items-center gap-1 shrink-0">

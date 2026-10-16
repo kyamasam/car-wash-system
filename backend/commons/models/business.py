@@ -24,6 +24,8 @@ class Business(UtilColumnsModel):
     logo = models.ImageField(upload_to="businesses/logos/", null=True, blank=True)
     # Set once; locked afterwards (enforced in BusinessSerializer and admin).
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, null=True, blank=True)
+    # Default state of the "Print job card" checkbox when creating a job.
+    print_job_card_by_default = models.BooleanField(default=True)
 
     class Meta:
         verbose_name_plural = "businesses"

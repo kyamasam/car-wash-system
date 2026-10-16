@@ -289,7 +289,11 @@ export default function JobDetailPage() {
                     )}
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-muted-foreground text-xs">×{item.quantity}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {item.length && item.width
+                        ? `${Number(item.length)} × ${Number(item.width)} = ${Number(item.quantity)}`
+                        : `×${item.quantity}`}
+                    </p>
                     <p className="font-medium">KES {item.line_total}</p>
                   </div>
                 </div>

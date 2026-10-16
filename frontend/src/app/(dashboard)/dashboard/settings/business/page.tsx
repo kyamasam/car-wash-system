@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { ImageUp, Lock, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -65,7 +66,13 @@ export default function BusinessSettingsPage() {
   }
 
   // Re-mount the form (resetting its state) whenever the saved business changes.
-  const formKey = [business.id, business.name, business.logo, business.currency].join("|");
+  const formKey = [
+    business.id,
+    business.name,
+    business.logo,
+    business.currency,
+    business.print_job_card_by_default,
+  ].join("|");
   return <BusinessForm key={formKey} business={business} />;
 }
 
@@ -79,6 +86,9 @@ function BusinessForm({ business }: { business: Business }) {
   const [logoPreview, setLogoPreview] = useState<string | null>(business.logo);
   const [logoRemoved, setLogoRemoved] = useState(false);
   const [showCurrencyConfirm, setShowCurrencyConfirm] = useState(false);
+  const [printJobCardByDefault, setPrintJobCardByDefault] = useState(
+    business.print_job_card_by_default ?? true,
+  );
 
   const currencyLocked = !!business.currency;
 
@@ -118,6 +128,7 @@ function BusinessForm({ business }: { business: Business }) {
     if (!currencyLocked && currency) form.append("currency", currency);
     if (logoFile) form.append("logo", logoFile);
     else if (logoRemoved) form.append("logo", "");
+    form.append("print_job_card_by_default", String(printJobCardByDefault));
     updateBusiness(form, { onSuccess: () => setShowCurrencyConfirm(false) });
   };
 
@@ -225,6 +236,23 @@ function BusinessForm({ business }: { business: Business }) {
               "Currency cannot be changed after saving."
             )}
           </p>
+        </div>
+
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id="print-job-card-by-default"
+            checked={printJobCardByDefault}
+            onCheckedChange={(checked) => setPrintJobCardByDefault(checked === true)}
+            className="mt-0.5"
+          />
+          <div className="space-y-1">
+            <Label htmlFor="print-job-card-by-default" className="cursor-pointer">
+              Print job card by default
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Pre-checks &quot;Print job card&quot; when creating a new job.
+            </p>
+          </div>
         </div>
 
         <div className="pt-2">

@@ -119,7 +119,7 @@ function renderDocHtml(job: JobCardData, opts: JobCardOptions, kind: DocKind): s
       (item) => `
         <tr>
           <td>${escapeHtml(item.service?.name ?? item.description ?? "Service")}</td>
-          <td class="num">${escapeHtml(qty(item.quantity))}</td>
+          <td class="num">${escapeHtml(item.length && item.width ? `${qty(item.length)} × ${qty(item.width)}` : qty(item.quantity))}</td>
           ${isReceipt ? `<td class="num">${escapeHtml(money(item.unit_price, opts.currency))}</td>` : ""}
           <td class="num">${escapeHtml(money(item.line_total, opts.currency))}</td>
         </tr>`

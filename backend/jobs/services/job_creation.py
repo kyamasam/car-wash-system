@@ -135,6 +135,11 @@ def build_job_items(job, items_data, branch_id, vehicle_category=None):
     for item in items_data:
         service_id = item["service"].id if hasattr(item["service"], "id") else item["service"]
         quantity = Decimal(str(item.get("quantity", 1)))
+        length = item.get("length")
+        width = item.get("width")
+        if length and width:
+            # By-size: area is length × width, priced at the per-unit rate
+            quantity = Decimal(str(length)) * Decimal(str(width))
 
         service_price = item.get("service_price") or lookup_service_price(service_id, branch_id, vehicle_category)
         unit_price = service_price.price
@@ -145,6 +150,8 @@ def build_job_items(job, items_data, branch_id, vehicle_category=None):
                 job=job,
                 service_id=service_id,
                 quantity=quantity,
+                length=length,
+                width=width,
                 unit_price=unit_price,
                 line_total=line_total,
                 description=item.get("description"),

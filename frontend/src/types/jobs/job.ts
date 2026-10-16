@@ -17,6 +17,8 @@ export interface JobItemPayload {
   service: string;
   service_price?: string;
   quantity: string;
+  length?: string;
+  width?: string;
   description?: string;
   tag_number?: string;
   notes?: string;
@@ -82,6 +84,8 @@ export interface JobItem {
   service: Service;
   description: string | null;
   quantity: string;
+  length: string | null;
+  width: string | null;
   unit_price: string;
   line_total: string;
   tag_number: string | null;

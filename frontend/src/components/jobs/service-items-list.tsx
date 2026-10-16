@@ -12,6 +12,9 @@ export interface ServiceLineItem {
   serviceName: string;
   serviceCode: string;
   quantity: number;
+  /** By-size dimensions; quantity = length × width */
+  length?: number;
+  width?: number;
   selectedPriceId?: string;
 }
 

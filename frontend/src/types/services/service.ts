@@ -10,6 +10,14 @@ export const SIZE_UNIT_LABELS: Record<SizeUnit, string> = {
   m: "m",
 };
 
+/** Linear unit used when measuring length × width for a by-size service. */
+export const DIMENSION_UNIT_LABELS: Record<SizeUnit, string> = {
+  sq_ft: "ft",
+  sq_m: "m",
+  ft: "ft",
+  m: "m",
+};
+
 export interface ServicePrice {
   id: string;
   vehicle_category: string | null;

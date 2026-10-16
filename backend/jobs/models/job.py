@@ -69,6 +69,8 @@ class JobItem(models.Model):
     service = models.ForeignKey("services.Service", on_delete=models.PROTECT, related_name="job_items")
     description = models.CharField(max_length=255, blank=True, null=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    length = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, help_text="By-size length")
+    width = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, help_text="By-size width")
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
     line_total = models.DecimalField(max_digits=12, decimal_places=2)
     tag_number = models.CharField(max_length=50, blank=True, null=True, help_text="Carpet tag")

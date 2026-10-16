@@ -11,6 +11,7 @@ from customers.serializers import CustomerSerializer, VehicleSerializer
 from jobs.constants import CollectionMethod, PaymentStatus
 from jobs.models import Job, JobItem
 from jobs.services.job_creation import build_job_items, resolve_customer, resolve_vehicle
+from services.constants import PricingUnit
 from services.models import Service, ServicePrice
 from workers.serializers.worker import WorkerSerializer
 
@@ -71,9 +72,23 @@ class _JobItemInputSerializer(serializers.Serializer):
         allow_null=True,
     )
     quantity = serializers.DecimalField(max_digits=10, decimal_places=2, default=1)
+    length = serializers.DecimalField(
+        max_digits=10, decimal_places=2, min_value=Decimal("0.01"), required=False, allow_null=True
+    )
+    width = serializers.DecimalField(
+        max_digits=10, decimal_places=2, min_value=Decimal("0.01"), required=False, allow_null=True
+    )
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     tag_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+    def validate(self, attrs):
+        if attrs["service"].unit == PricingUnit.BY_SIZE:
+            if not attrs.get("length") or not attrs.get("width"):
+                raise serializers.ValidationError(
+                    {"length": "Length and width are required for by-size services."}
+                )
+        return attrs
 
 
 class JobCreateSerializer(serializers.ModelSerializer):

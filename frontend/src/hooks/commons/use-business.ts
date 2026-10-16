@@ -6,6 +6,7 @@ export interface Business {
   name: string;
   logo: string | null;
   currency: Currency | null;
+  print_job_card_by_default: boolean;
   primary_user: string | null;
   is_active: boolean;
   created_at: string;
