@@ -42,6 +42,7 @@ import type {
   JobStatus,
   PaymentStatus,
 } from "@/types/jobs/job";
+import type { ServiceCategory } from "@/types/services/service";
 
 const PAYMENT_VARIANT: Record<
   PaymentStatus,
@@ -63,9 +64,12 @@ export default function JobsPage() {
   const [collectionMethod, setCollectionMethod] = React.useState<
     CollectionMethod | ""
   >("");
+  const [category, setCategory] = React.useState<
+    Extract<ServiceCategory, "vehicle" | "carpet"> | ""
+  >("");
   const [search, setSearch] = React.useState("");
   const [viewMode, setViewMode] = React.useState<"cards" | "table">("cards");
-  const [datePreset, setDatePreset] = React.useState<"today" | "yesterday" | "custom" | "">("");
+  const [datePreset, setDatePreset] = React.useState<"today" | "yesterday" | "custom" | "">("today");
   const [customFrom, setCustomFrom] = React.useState("");
   const [customTo, setCustomTo] = React.useState("");
   const [fromOpen, setFromOpen] = React.useState(false);
@@ -90,6 +94,7 @@ export default function JobsPage() {
     status ||
     paymentStatus ||
     collectionMethod ||
+    category ||
     search ||
     datePreset
   );
@@ -98,6 +103,7 @@ export default function JobsPage() {
     setStatus("");
     setPaymentStatus("");
     setCollectionMethod("");
+    setCategory("");
     setSearch("");
     setDatePreset("");
     setCustomFrom("");
@@ -107,7 +113,7 @@ export default function JobsPage() {
 
   React.useEffect(() => {
     setPage(1);
-  }, [status, paymentStatus, collectionMethod, search, datePreset, customFrom, customTo]);
+  }, [status, paymentStatus, collectionMethod, category, search, datePreset, customFrom, customTo]);
 
   React.useEffect(() => {
     fetchJobsList({
@@ -115,10 +121,11 @@ export default function JobsPage() {
       status: status || undefined,
       payment_status: paymentStatus || undefined,
       collection_method: collectionMethod || undefined,
+      category: category || undefined,
       search: search || undefined,
       ...getDateRange(),
     });
-  }, [page, status, paymentStatus, collectionMethod, search, datePreset, customFrom, customTo]);
+  }, [page, status, paymentStatus, collectionMethod, category, search, datePreset, customFrom, customTo]);
 
   const jobs = jobsList?.results ?? [];
   const totalCount = jobsList?.count ?? 0;
@@ -140,6 +147,30 @@ export default function JobsPage() {
             New Job
           </Button>
         </Link>
+      </div>
+
+      {/* Job type pills */}
+      <div className="flex flex-wrap items-center gap-2">
+        {(
+          [
+            { value: "", label: "All" },
+            { value: "vehicle", label: "Vehicle" },
+            { value: "carpet", label: "Carpet" },
+          ] as const
+        ).map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => setCategory(opt.value)}
+            className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+              category === opt.value
+                ? "bg-primary text-primary-foreground border-primary"
+                : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       {/* Filter bar */}

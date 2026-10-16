@@ -1,3 +1,5 @@
+import type { ServiceCategory } from "@/types/services/service";
+
 export type CollectionMethod = "walk_in" | "pickup" | "delivery";
 export type VehicleCategory = "saloon" | "suv" | "van" | "truck" | "other";
 export type JobStatus =
@@ -139,6 +141,7 @@ export interface JobListParams {
   status?: JobStatus;
   payment_status?: PaymentStatus;
   collection_method?: CollectionMethod;
+  category?: ServiceCategory;
   search?: string;
   date_from?: string;
   date_to?: string;
