@@ -226,16 +226,29 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} {name} {process:d} - {message}",
+            "style": "{",
+        },
+    },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
+            "formatter": "verbose",
         },
     },
     "root": {
         "handlers": ["console"],
-        "level": "WARNING",
+        "level": os.getenv("LOG_LEVEL", "INFO"),
     },
-    "loggers": {},
+    "loggers": {
+        # Unhandled exceptions / 5xx responses with tracebacks
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        # Bad Host headers (ALLOWED_HOSTS) and CSRF failures
+        "django.security": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "django.db.backends": {"level": os.getenv("DB_LOG_LEVEL", "WARNING")},
+    },
 }
 # Media files (User uploads)
 MEDIA_URL = '/media/'
