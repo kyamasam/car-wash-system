@@ -122,7 +122,7 @@ class UserSerializer(serializers.ModelSerializer):
             existing_user.is_active = True
             existing_user.email_verified = False
             existing_user.save()
-            # send_account_confirmation_email(existing_user)
+            send_account_confirmation_email(existing_user)
             return existing_user
         except User.DoesNotExist:
             pass
