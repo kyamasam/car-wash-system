@@ -9,6 +9,7 @@ from services.urls import url_patterns as service_url_patterns
 from jobs.urls import url_patterns as job_url_patterns
 from billing.urls import url_patterns as billing_url_patterns
 from reports.urls import url_patterns as report_url_patterns
+from subscriptions.urls import url_patterns as subscription_url_patterns
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from django.conf import settings
@@ -27,6 +28,7 @@ urlpatterns = [
     path('api/jobs/', include([*job_url_patterns,])),
     path('api/billing/', include([*billing_url_patterns,])),
     path('api/reports/', include([*report_url_patterns,])),
+    path('api/subscriptions/', include([*subscription_url_patterns,])),
 
     path('summernote/', include('django_summernote.urls')),
     path('admin/', admin.site.urls),

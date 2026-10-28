@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'jobs',
     'billing',
     'reports',
+    'subscriptions',
     'django_celery_results',
     'django_summernote',
 ]
@@ -51,6 +52,8 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
+        # Read-only mode for expired businesses. Views that override permission_classes must add it themselves.
+        'subscriptions.permissions.HasActiveSubscription',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
@@ -284,10 +287,23 @@ CELERY_TASK_DEFAULT_QUEUE = os.getenv("CELERY_TASK_DEFAULT_QUEUE", "sf_networks"
 
 from celery.schedules import crontab
 
-CELERY_BEAT_SCHEDULE = {}
+CELERY_BEAT_SCHEDULE = {
+    "reconcile-pending-subscription-payments": {
+        "task": "subscriptions.tasks.reconcile.reconcile_pending_subscription_payments",
+        "schedule": crontab(minute="*/5"),
+    },
+}
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 FRONT_END_LINK = os.getenv('FRONT_END_LINK')
+
+SUBSCRIPTION_TRIAL_DAYS = int(os.getenv('SUBSCRIPTION_TRIAL_DAYS', '14'))
+
+FASTDUKA_API_BASE = os.getenv('FASTDUKA_API_BASE', 'https://api.fastduka.co.ke/api')
+FASTDUKA_API_KEY = os.getenv('FASTDUKA_API_KEY', '')
+FASTDUKA_PAYBILL = os.getenv('FASTDUKA_PAYBILL', '')
+FASTDUKA_ORGID = os.getenv('FASTDUKA_ORGID', '')
+FASTDUKA_CONFIG_ID = os.getenv('FASTDUKA_CONFIG_ID', '')
 
 MPESA_CONSUMER_KEY = os.getenv('MPESA_CONSUMER_KEY', '')
 MPESA_CONSUMER_SECRET = os.getenv('MPESA_CONSUMER_SECRET', '')
