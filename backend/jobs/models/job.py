@@ -72,6 +72,10 @@ class JobItem(models.Model):
     length = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, help_text="By-size length")
     width = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, help_text="By-size width")
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    standard_unit_price = models.DecimalField(
+        max_digits=12, decimal_places=2, blank=True, null=True, help_text="Catalog price at time of sale"
+    )
+    is_custom_price = models.BooleanField(default=False, help_text="Unit price was overridden for this sale")
     line_total = models.DecimalField(max_digits=12, decimal_places=2)
     tag_number = models.CharField(max_length=50, blank=True, null=True, help_text="Carpet tag")
     notes = models.TextField(blank=True, null=True)

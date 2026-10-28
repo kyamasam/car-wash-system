@@ -18,6 +18,7 @@ export type PaymentStatus = "unpaid" | "partially_paid" | "paid" | "refunded";
 export interface JobItemPayload {
   service: string;
   service_price?: string;
+  custom_unit_price?: string;
   quantity: string;
   length?: string;
   width?: string;
@@ -89,6 +90,8 @@ export interface JobItem {
   length: string | null;
   width: string | null;
   unit_price: string;
+  standard_unit_price: string | null;
+  is_custom_price: boolean;
   line_total: string;
   tag_number: string | null;
   notes: string | null;

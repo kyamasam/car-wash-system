@@ -78,6 +78,9 @@ class _JobItemInputSerializer(serializers.Serializer):
     width = serializers.DecimalField(
         max_digits=10, decimal_places=2, min_value=Decimal("0.01"), required=False, allow_null=True
     )
+    custom_unit_price = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("0"), required=False, allow_null=True
+    )
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     tag_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
