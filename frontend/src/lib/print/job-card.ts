@@ -118,9 +118,8 @@ function renderDocHtml(job: JobCardData, opts: JobCardOptions, kind: DocKind): s
     .map(
       (item) => `
         <tr>
-          <td>${escapeHtml(item.service?.name ?? item.description ?? "Service")}</td>
+          <td>${escapeHtml(item.service?.name ?? item.description ?? "Service")}${isReceipt ? `<div class="muted">@ ${escapeHtml(money(item.unit_price, opts.currency))}</div>` : ""}</td>
           <td class="num">${escapeHtml(item.length && item.width ? `${qty(item.length)} × ${qty(item.width)}` : qty(item.quantity))}</td>
-          ${isReceipt ? `<td class="num">${escapeHtml(money(item.unit_price, opts.currency))}</td>` : ""}
           <td class="num">${escapeHtml(money(item.line_total, opts.currency))}</td>
         </tr>`
     )
@@ -132,26 +131,29 @@ function renderDocHtml(job: JobCardData, opts: JobCardOptions, kind: DocKind): s
 <meta charset="utf-8" />
 <title>${title} ${escapeHtml(job.job_number)}</title>
 <style>
-  @page { size: 80mm auto; margin: 4mm; }
+  /* 58mm thermal roll: ~48mm printable width, centred on the paper. */
+  @page { size: 58mm auto; margin: 0; }
   * { box-sizing: border-box; }
-  body { margin: 0; padding: 4mm; width: 80mm; font: 12px/1.4 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #000; background: #fff; }
+  html, body { margin: 0; padding: 0; background: #fff; }
+  body { width: 48mm; margin: 0 auto; padding: 2mm 0 4mm; font: 11px/1.35 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #000; overflow-wrap: anywhere; }
   .center { text-align: center; }
-  .business { font-size: 14px; font-weight: 700; }
-  .branch { font-size: 12px; font-weight: 600; }
-  .logo { max-width: 40mm; max-height: 20mm; object-fit: contain; margin-bottom: 4px; }
-  .title { font-size: 11px; letter-spacing: 2px; font-weight: 600; margin-top: 2px; }
-  .number { font-size: 22px; font-weight: 800; margin: 4px 0 2px; }
-  .muted { color: #444; font-size: 11px; }
-  hr { border: 0; border-top: 1px dashed #000; margin: 8px 0; }
-  .row { display: flex; justify-content: space-between; gap: 8px; }
-  .row .label { color: #444; }
+  .business { font-size: 13px; font-weight: 700; }
+  .branch { font-size: 11px; font-weight: 600; }
+  .logo { max-width: 30mm; max-height: 15mm; object-fit: contain; margin-bottom: 3px; }
+  .title { font-size: 10px; letter-spacing: 2px; font-weight: 700; margin-top: 2px; }
+  .number { font-size: 18px; font-weight: 800; margin: 3px 0 2px; }
+  /* Thermal heads print grey as speckles, so keep secondary text black. */
+  .muted { color: #000; font-size: 10px; }
+  hr { border: 0; border-top: 1px dashed #000; margin: 5px 0; }
+  .row { display: flex; justify-content: space-between; gap: 6px; }
+  .row .label { flex-shrink: 0; }
   .row span:last-child { text-align: right; font-weight: 600; }
-  .plate { font-size: 16px; font-weight: 800; letter-spacing: 1px; }
+  .plate { font-size: 15px; font-weight: 800; letter-spacing: 1px; }
   table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; font-size: 11px; border-bottom: 1px solid #000; padding: 2px 0; }
-  td { padding: 3px 0; vertical-align: top; }
-  .num { text-align: right; white-space: nowrap; padding-left: 6px; }
-  .total { font-size: 15px; font-weight: 800; }
+  th { text-align: left; font-size: 10px; border-bottom: 1px solid #000; padding: 1px 0; }
+  td { padding: 2px 0; vertical-align: top; }
+  .num { text-align: right; white-space: nowrap; padding-left: 4px; }
+  .total { font-size: 13px; font-weight: 800; }
   .notes { white-space: pre-wrap; }
 </style>
 </head>
@@ -180,7 +182,7 @@ function renderDocHtml(job: JobCardData, opts: JobCardOptions, kind: DocKind): s
 
   <hr />
   <table>
-    <thead><tr><th>Service</th><th class="num">Qty</th>${isReceipt ? `<th class="num">Price</th>` : ""}<th class="num">Amount</th></tr></thead>
+    <thead><tr><th>Service</th><th class="num">Qty</th><th class="num">Amount</th></tr></thead>
     <tbody>${items}</tbody>
   </table>
 
