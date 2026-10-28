@@ -7,8 +7,15 @@ from services.constants import ServiceCategory, PricingUnit, SizeUnit, Commissio
 
 class Service(UtilColumnsModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    business = models.ForeignKey(
+        "commons.Business", on_delete=models.CASCADE, null=True, related_name="services"
+    )
+    branch = models.ForeignKey(
+        "commons.Branch", on_delete=models.CASCADE, null=True, blank=True, related_name="services",
+        help_text="NULL applies to all branches"
+    )
     name = models.CharField(max_length=255)
-    code = models.CharField(max_length=30, unique=True)
+    code = models.CharField(max_length=30)
     category = models.CharField(max_length=20, choices=ServiceCategory.choices)
     unit = models.CharField(max_length=20, choices=PricingUnit.choices, default=PricingUnit.PER_JOB)
     size_unit = models.CharField(
@@ -16,6 +23,11 @@ class Service(UtilColumnsModel):
         help_text="Measurement unit for by_size services; price is the rate per this unit"
     )
     icon = models.ImageField(upload_to="services/icons/", null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["business", "code"], name="unique_service_code_per_business"),
+        ]
 
     def __str__(self):
         return self.name

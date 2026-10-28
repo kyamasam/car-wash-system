@@ -83,6 +83,14 @@ class _JobItemInputSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     def validate(self, attrs):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user and user.is_authenticated and not user.is_superuser:
+            if attrs["service"].business_id != user.business_id:
+                raise serializers.ValidationError({"service": "Service does not belong to your business."})
+            service_price = attrs.get("service_price")
+            if service_price and service_price.service_id != attrs["service"].id:
+                raise serializers.ValidationError({"service_price": "Price does not belong to this service."})
         if attrs["service"].unit == PricingUnit.BY_SIZE:
             if not attrs.get("length") or not attrs.get("width"):
                 raise serializers.ValidationError(
