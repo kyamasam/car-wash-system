@@ -82,10 +82,13 @@ export const useLogin = (onSuccess?: () => void) => {
         return response;
       }
 
-      // Redirect first; refetches run in the background
-      onSuccess?.();
+      // Drop any data from a previous session, then refetch for the new user
+      queryClient.removeQueries({ queryKey: ["branches"] });
+      queryClient.removeQueries({ queryKey: ["business"] });
       queryClient.invalidateQueries({ queryKey: ["current-user"] });
-      queryClient.invalidateQueries({ queryKey: ["saved-jobs"] });
+
+      router.replace("/dashboard");
+      onSuccess?.();
       return response;
     } catch (error) {
       const message =

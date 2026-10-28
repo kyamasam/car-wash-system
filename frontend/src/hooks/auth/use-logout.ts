@@ -7,7 +7,7 @@ export const useLogout = () => {
 
   const logout = () => {
     localStorage.removeItem("authToken");
-    queryClient.setQueryData(["current-user"], null);
+    queryClient.clear();
     router.push("/");
   };
 
