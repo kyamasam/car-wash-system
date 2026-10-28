@@ -4,8 +4,6 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
@@ -68,13 +66,3 @@ def send_account_confirmation_email(user):
     except Exception as e:
         logger.error(f"Failed to send account confirmation email to {user.email}: {str(e)}")
         return False
-
-
-@receiver(post_save, sender='users.User')
-def handle_user_created(sender, instance, created, **kwargs):
-    """
-    Send a confirmation email for password-registered users only.
-    Social login users (Google, etc.) are verified immediately and skip this step.
-    """
-    if created and getattr(instance, 'login_type', 'password') == 'password':
-        send_account_confirmation_email(instance)

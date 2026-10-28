@@ -92,7 +92,7 @@ class UserViewSet(BranchScopedMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=["post"], url_path="resend-verification",
             permission_classes=[permissions.AllowAny])
     def resend_verification(self, request):
-        from users.signals.send_welcome_email import send_account_confirmation_email
+        from users.services.account_confirmation import send_account_confirmation_email
         from django.utils import timezone
         from datetime import timedelta
 

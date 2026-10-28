@@ -105,7 +105,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        from users.signals.send_welcome_email import send_account_confirmation_email
+        from users.services.account_confirmation import send_account_confirmation_email
 
         groups = validated_data.pop("groups", None)
         if not self.context["request"].user.is_staff:
