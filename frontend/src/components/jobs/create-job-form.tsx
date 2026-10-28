@@ -17,7 +17,7 @@ import Link from "next/link";
 
 import { useApiMutation } from "@/hooks/use-api";
 import { useCurrentUser } from "@/hooks/auth/use-current-user";
-import { useCustomersStore } from "@/stores/customers-store";
+import { CUSTOMER_SEARCH_MIN_LENGTH, useCustomerSearch } from "@/hooks/customers/use-customer-search";
 import { useVehiclesStore } from "@/stores/vehicles-store";
 import { useWorkersStore } from "@/stores/workers-store";
 import { useServicesStore } from "@/stores/services-store";
@@ -58,20 +58,19 @@ export function CreateJobForm() {
   const router = useRouter();
   const { data: currentUser } = useCurrentUser();
 
-  const { customersAll, customersAllLoading, fetchCustomersAll } = useCustomersStore();
   const { vehiclesAll, vehiclesAllLoading, fetchVehiclesAll } = useVehiclesStore();
   const { workersAll, workersAllLoading, fetchWorkersAll } = useWorkersStore();
   const { servicesAll, servicesAllLoading, fetchServicesAll } = useServicesStore();
 
   React.useEffect(() => {
-    fetchCustomersAll();
     fetchVehiclesAll();
     fetchWorkersAll();
     fetchServicesAll();
   }, []);
 
   // Form state
-  const [customerId, setCustomerId] = React.useState("");
+  const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
+  const customerId = selectedCustomer?.id ?? "";
   const [vehicleId, setVehicleId] = React.useState("");
   const [workerId, setWorkerId] = React.useState("");
   const [serviceItems, setServiceItems] = React.useState<ServiceLineItem[]>([]);
@@ -99,10 +98,8 @@ export function CreateJobForm() {
   const [newVehiclePlate, setNewVehiclePlate] = React.useState("");
 
   // Track newly created workers so they appear in dropdown immediately
-  const [extraCustomers, setExtraCustomers] = React.useState<Customer[]>([]);
   const [extraWorkers, setExtraWorkers] = React.useState<Worker[]>([]);
 
-  const allCustomers = [...customersAll, ...extraCustomers.filter((ec) => !customersAll.find((c) => c.id === ec.id))];
   const allVehicles = vehiclesAll;
   const allWorkers = [...workersAll, ...extraWorkers.filter((ew) => !workersAll.find((w) => w.id === ew.id))];
 
@@ -114,14 +111,16 @@ export function CreateJobForm() {
     ? servicesAll
     : servicesAll.filter((s) => s.category === activeCategory);
 
-  const selectedCustomer = allCustomers.find((c) => c.id === customerId) ?? null;
-
-  const phoneSearchResults = phoneQuery.length >= 2
-    ? allCustomers.filter((c) =>
-        c.phone.includes(phoneQuery) ||
-        c.name?.toLowerCase().includes(phoneQuery.toLowerCase())
-      ).slice(0, 6)
-    : [];
+  const {
+    data: customerSearch,
+    isFetching: customerSearchFetching,
+    debouncedQuery: customerSearchQuery,
+  } = useCustomerSearch(phoneQuery);
+  const phoneSearchReady = phoneQuery.trim().length >= CUSTOMER_SEARCH_MIN_LENGTH;
+  // Results are settled once the debounced query has caught up and nothing is in flight
+  const phoneSearchSettled =
+    phoneSearchReady && customerSearchQuery === phoneQuery.trim() && !customerSearchFetching;
+  const phoneSearchResults = phoneSearchReady ? (customerSearch?.results ?? []).slice(0, 6) : [];
 
   const plateSearchResults = plateQuery.length >= 1
     ? filteredVehicles
@@ -136,14 +135,14 @@ export function CreateJobForm() {
   }));
 
   function selectCustomer(customer: Customer) {
-    setCustomerId(customer.id);
+    setSelectedCustomer(customer);
     setPhoneQuery("");
     setShowCreateForm(false);
     setNewCustomerName("");
   }
 
   function clearCustomer() {
-    setCustomerId("");
+    setSelectedCustomer(null);
     setVehicleId("");
     setNewVehiclePlate("");
     setPlateQuery("");
@@ -308,7 +307,7 @@ export function CreateJobForm() {
   const canSubmit =
     serviceItems.length > 0 && serviceItems.every((item) => item.quantity > 0) && !isPending;
   const showVehicleSelector = !!customerId || showCreateForm;
-  const showSearchResults = !customerId && phoneQuery.length >= 2;
+  const showSearchResults = !customerId && phoneSearchReady;
 
   return (
     <>
@@ -430,16 +429,16 @@ export function CreateJobForm() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
-                          if (phoneSearchResults.length === 0 && phoneQuery.length >= 2) {
+                          if (!phoneSearchSettled) return;
+                          if (phoneSearchResults.length === 0) {
                             setShowCreateForm(true);
                           } else if (phoneSearchResults.length === 1) {
                             selectCustomer(phoneSearchResults[0]);
                           }
                         }
                       }}
-                      disabled={customersAllLoading}
                     />
-                    {customersAllLoading && (
+                    {customerSearchFetching && (
                       <Loader2Icon className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-muted-foreground" />
                     )}
                   </div>
@@ -467,7 +466,9 @@ export function CreateJobForm() {
                           ))}
                         </ul>
                       ) : (
-                        <p className="px-3 py-2 text-sm text-muted-foreground">No customer found.</p>
+                        <p className="px-3 py-2 text-sm text-muted-foreground">
+                          {phoneSearchSettled ? "No customer found." : "Searching…"}
+                        </p>
                       )}
 
                       {/* New customer trigger */}

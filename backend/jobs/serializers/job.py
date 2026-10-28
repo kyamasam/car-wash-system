@@ -162,10 +162,10 @@ class JobCreateSerializer(serializers.ModelSerializer):
         branch = request.user.branch
 
         # 1. Resolve customer (existing, new, or anonymous)
-        customer = resolve_customer(customer_id=customer_id, customer_data=customer_data)
+        customer = resolve_customer(customer_id=customer_id, customer_data=customer_data, branch=branch)
 
         # 2. Resolve vehicle (by UUID, inline data, or omitted)
-        vehicle = resolve_vehicle(vehicle_id=vehicle_id, vehicle_data=vehicle_data, customer=customer)
+        vehicle = resolve_vehicle(vehicle_id=vehicle_id, vehicle_data=vehicle_data, customer=customer, branch=branch)
         vehicle_category = vehicle.vehicle_category if vehicle else None
 
         # 3. Create the job shell — totals will be filled after items are created
