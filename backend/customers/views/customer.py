@@ -6,6 +6,7 @@ from rest_framework.viewsets import ModelViewSet
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
+from commons.mixins import CustomerBranchScopedMixin
 from customers.models import Customer, Vehicle
 from customers.serializers import CustomerSerializer, VehicleSerializer
 
@@ -19,11 +20,14 @@ from customers.serializers import CustomerSerializer, VehicleSerializer
     destroy=extend_schema(tags=["customers"]),
     list_all=extend_schema(tags=["customers"]),
 )
-class CustomerViewSet(ModelViewSet):
-    queryset = Customer.objects.all()
+class CustomerViewSet(CustomerBranchScopedMixin, ModelViewSet):
+    queryset = Customer.objects.order_by("name", "phone")
     serializer_class = CustomerSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ["name", "phone", "email"]
+
+    def perform_create(self, serializer):
+        serializer.save(branch=self.request.user.branch)
 
     @extend_schema(
         tags=["customers"],
@@ -47,12 +51,15 @@ class CustomerViewSet(ModelViewSet):
     destroy=extend_schema(tags=["customers"]),
     list_all=extend_schema(tags=["customers"]),
 )
-class VehicleViewSet(ModelViewSet):
+class VehicleViewSet(CustomerBranchScopedMixin, ModelViewSet):
     queryset = Vehicle.objects.select_related("customer").all()
     serializer_class = VehicleSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["vehicle_category", "customer"]
     search_fields = ["plate_number", "make", "model", "color"]
+
+    def perform_create(self, serializer):
+        serializer.save(branch=self.request.user.branch)
 
     @extend_schema(
         tags=["customers"],

@@ -8,7 +8,7 @@ from jobs.models import JobItem
 from services.models import ServicePrice
 
 
-def resolve_customer(customer_id=None, customer_data=None):
+def resolve_customer(customer_id=None, customer_data=None, branch=None):
     """Return existing or newly created Customer, or None if neither provided."""
     if customer_id:
         try:
@@ -25,6 +25,7 @@ def resolve_customer(customer_id=None, customer_data=None):
             defaults={
                 "name": customer_data.get("name"),
                 "email": customer_data.get("email"),
+                "branch": branch,
             },
         )
         return customer
@@ -32,7 +33,7 @@ def resolve_customer(customer_id=None, customer_data=None):
     return None
 
 
-def resolve_vehicle(vehicle_id=None, vehicle_data=None, customer=None):
+def resolve_vehicle(vehicle_id=None, vehicle_data=None, customer=None, branch=None):
     """Return existing or newly created Vehicle, or None if not provided."""
     if vehicle_id:
         try:
@@ -58,6 +59,7 @@ def resolve_vehicle(vehicle_id=None, vehicle_data=None, customer=None):
             "make": vehicle_data.get("make"),
             "model": vehicle_data.get("model"),
             "color": vehicle_data.get("color"),
+            "branch": branch,
         },
     )
 

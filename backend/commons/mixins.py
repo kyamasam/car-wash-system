@@ -48,3 +48,24 @@ class BusinessScopedMixin:
                 | Q(**{self.branch_lookup_field: user.branch_id})
             )
         return qs
+
+
+class CustomerBranchScopedMixin:
+    """
+    Filters customer-like records (Customer, Vehicle) to the logged-in user's branch.
+    A record belongs to a branch if it was created there or has a job there.
+    - Superusers see everything.
+    - Users with a branch see records created at or serviced by that branch.
+    - Users without a branch (business-level) see records for all branches in their business.
+    """
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        if not user.is_authenticated or user.is_superuser:
+            return qs
+        if user.branch_id:
+            return qs.filter(Q(branch=user.branch_id) | Q(jobs__branch=user.branch_id)).distinct()
+        return qs.filter(
+            Q(branch__business=user.business_id) | Q(jobs__branch__business=user.business_id)
+        ).distinct()

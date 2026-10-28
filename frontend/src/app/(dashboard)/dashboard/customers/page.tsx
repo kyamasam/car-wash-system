@@ -5,20 +5,12 @@ import Link from "next/link";
 import { PlusIcon, UsersIcon, SearchIcon } from "lucide-react";
 
 import { useCustomersStore } from "@/stores/customers-store";
+import { useDebounce } from "@/hooks/use-debounce";
 import { AddCustomerDialog } from "@/components/jobs/add-customer-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Customer } from "@/types/customers/customer";
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = React.useState(value);
-  React.useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return debounced;
-}
 
 export default function CustomersPage() {
   const { customersList, customersListLoading, fetchCustomersList } = useCustomersStore();
