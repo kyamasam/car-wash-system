@@ -105,8 +105,6 @@ class UserSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        from users.services.account_confirmation import send_account_confirmation_email
-
         groups = validated_data.pop("groups", None)
         if not self.context["request"].user.is_staff:
             groups = []
@@ -121,8 +119,8 @@ class UserSerializer(serializers.ModelSerializer):
             existing_user.last_name = validated_data.get("last_name", existing_user.last_name)
             existing_user.is_active = True
             existing_user.email_verified = False
+            existing_user._send_confirmation = True  # picked up by the post_save signal
             existing_user.save()
-            send_account_confirmation_email(existing_user)
             return existing_user
         except User.DoesNotExist:
             pass
