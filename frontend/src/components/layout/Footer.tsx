@@ -63,7 +63,7 @@ export const Footer = () => {
               </div>
             </div>
             <p className="text-xs text-foreground/40 max-w-[200px] leading-relaxed">
-              Cloud hosting for Africa. Deploy VPS instances in seconds, pay via M-Pesa.
+              Car wash management made simple. Track jobs, staff and payments, pay via M-Pesa.
             </p>
           </div>
 

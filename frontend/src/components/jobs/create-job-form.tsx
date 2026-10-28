@@ -26,6 +26,7 @@ import { useCurrentBusiness } from "@/hooks/commons/use-business";
 
 import { SearchCombobox } from "@/components/ui/search-combobox";
 import { Button } from "@/components/ui/button";
+import { WriteGuard } from "@/components/subscriptions/write-guard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -820,16 +821,18 @@ export function CreateJobForm() {
                   Cancel
                 </Button>
               </Link>
-              <Button type="submit" disabled={!canSubmit} className="flex-1">
-                {isPending ? (
-                  <>
-                    <Loader2Icon className="animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create Job"
-                )}
-              </Button>
+              <WriteGuard className="flex-1">
+                <Button type="submit" disabled={!canSubmit} className="flex-1">
+                  {isPending ? (
+                    <>
+                      <Loader2Icon className="animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Job"
+                  )}
+                </Button>
+              </WriteGuard>
             </div>
           </div>
         </div>

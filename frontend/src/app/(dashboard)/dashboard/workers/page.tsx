@@ -8,6 +8,7 @@ import { useWorkersStore } from "@/stores/workers-store";
 import { useCurrentUser } from "@/hooks/auth/use-current-user";
 import { AddWorkerDialog } from "@/components/jobs/add-worker-dialog";
 import { Button } from "@/components/ui/button";
+import { WriteGuard } from "@/components/subscriptions/write-guard";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -60,10 +61,12 @@ export default function WorkersPage() {
           </p>
         </div>
         {currentUser?.branch && (
-          <Button onClick={() => setCreateOpen(true)}>
-            <PlusIcon />
-            New Worker
-          </Button>
+          <WriteGuard>
+            <Button onClick={() => setCreateOpen(true)}>
+              <PlusIcon />
+              New Worker
+            </Button>
+          </WriteGuard>
         )}
       </div>
 
@@ -97,10 +100,12 @@ export default function WorkersPage() {
                 <p className="text-xs text-muted-foreground mt-1 mb-4">
                   Add your first worker to get started.
                 </p>
-                <Button size="sm" onClick={() => setCreateOpen(true)}>
-                  <PlusIcon />
-                  Add Worker
-                </Button>
+                <WriteGuard>
+                  <Button size="sm" onClick={() => setCreateOpen(true)}>
+                    <PlusIcon />
+                    Add Worker
+                  </Button>
+                </WriteGuard>
               </>
             )}
           </div>

@@ -62,7 +62,7 @@ REST_FRAMEWORK = {
 }
 DRF_STANDARDIZED_ERRORS = {"ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": True}
 
-PROJECT_NAME = str(os.getenv('PROJECT_NAME'))
+PROJECT_NAME = os.getenv('PROJECT_NAME', 'CarwashManager')
 PROJECT_DESCRIPTION = str(os.getenv('PROJECT_DESCRIPTION'))
 
 SPECTACULAR_SETTINGS = {
@@ -203,7 +203,7 @@ email_address = os.getenv('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 
 # Check if it already includes a display name (contains angle brackets)
 if "<" not in email_address: # type: ignore
-    DEFAULT_FROM_EMAIL = f"SF Networks <{email_address}>"
+    DEFAULT_FROM_EMAIL = f"{PROJECT_NAME} <{email_address}>"
 else:
     DEFAULT_FROM_EMAIL = email_address
 

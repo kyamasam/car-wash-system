@@ -5,6 +5,7 @@ import { Loader2Icon } from "lucide-react";
 
 import { useBillingStore } from "@/stores/billing-store";
 import { Button } from "@/components/ui/button";
+import { WriteGuard } from "@/components/subscriptions/write-guard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -205,13 +206,15 @@ export function PayJobModal({ job, open, onOpenChange, onSuccess }: PayJobModalP
           </div>
 
           <DialogFooter showCloseButton>
-            <Button type="submit" disabled={createPaymentLoading}>
-              {createPaymentLoading ? (
-                <Loader2Icon className="size-4 animate-spin" />
-              ) : (
-                "Record Payment"
-              )}
-            </Button>
+            <WriteGuard>
+              <Button type="submit" disabled={createPaymentLoading}>
+                {createPaymentLoading ? (
+                  <Loader2Icon className="size-4 animate-spin" />
+                ) : (
+                  "Record Payment"
+                )}
+              </Button>
+            </WriteGuard>
           </DialogFooter>
         </form>
       </DialogContent>

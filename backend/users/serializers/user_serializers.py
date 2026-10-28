@@ -92,6 +92,7 @@ class UserSerializer(serializers.ModelSerializer):
             "groups", "groups_objects", "staff_number", "is_admin",
             "email", "role", "business", "branch", "email_verified",
         ]
+        read_only_fields = ["business", "branch", "role", "email_verified"]
 
     def validate_phone_number(self, value):
         if not value:
@@ -105,27 +106,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        from users.signals.send_welcome_email import send_account_confirmation_email
-
         groups = validated_data.pop("groups", None)
         if not self.context["request"].user.is_staff:
             groups = []
-        email = validated_data.get("email")
-
-        try:
-            existing_user = User.objects.get(email=email, account_claimed=False)
-            password = validated_data.get("password")
-            if password:
-                existing_user.set_password(password)
-            existing_user.first_name = validated_data.get("first_name", existing_user.first_name)
-            existing_user.last_name = validated_data.get("last_name", existing_user.last_name)
-            existing_user.is_active = True
-            existing_user.email_verified = False
-            existing_user.save()
-            send_account_confirmation_email(existing_user)
-            return existing_user
-        except User.DoesNotExist:
-            pass
 
         user = User.objects.create_user(is_active=True, **validated_data)
 

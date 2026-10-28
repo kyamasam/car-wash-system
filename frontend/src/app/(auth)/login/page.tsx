@@ -10,8 +10,8 @@ export default function LoginPage() {
   return (
     <AuthHeroLayout
       heading="Welcome back!"
-      subheading="Log in to manage your cloud infrastructure, VPS instances, and billing."
-      imageSrc="/images/servers.webp"
+      subheading="Log in to manage your car wash jobs, workers, and payments."
+      imageSrc="/images/carwash.jpg"
     >
       <LoginCard className="w-full max-w-md" onSuccess={() => router.push("/dashboard")} />
     </AuthHeroLayout>

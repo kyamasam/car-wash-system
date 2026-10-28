@@ -28,13 +28,13 @@ function Logo({ white = false }: { white?: boolean }) {
           className={`text-[15px] font-black tracking-tight uppercase ${white ? "text-white" : "text-primary/80"
             }`}
         >
-          SF
+          Carwash
         </span>
         <span
           className={`text-[8px] font-light tracking-[0.3em] uppercase ${white ? "text-white/70" : "text-primary"
             }`}
         >
-          Networks
+          Manager
         </span>
       </div>
     </Link>
@@ -63,7 +63,7 @@ export function AuthHeroLayout({
       </div>
 
       {/* Right Form Panel */}
-      <div className="flex-1 flex flex-col overflow-y-auto bg-slate-50">
+      <div className="flex-1 flex flex-col overflow-y-auto bg-background">
         {/* Top bar */}
 
 

@@ -10,6 +10,7 @@ from rest_framework import status
 from commons.mixins import BranchScopedMixin
 from users.models import User
 from users.permissions import AnonCreateAndUpdateOwnerOnly
+from users.services.account_emails import send_account_confirmation_email
 from users.serializers import (
     ChangePasswordSerializer,
     ConfirmAccountSerializer,
@@ -41,6 +42,10 @@ class UserViewSet(BranchScopedMixin, viewsets.ModelViewSet):
         if self.action == 'list' and not self.request.user.is_superuser:
             return LimitedUserSerializer
         return UserSerializer
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        send_account_confirmation_email(user)
 
     def partial_update(self, request, pk=None):
         try:
@@ -92,7 +97,6 @@ class UserViewSet(BranchScopedMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=["post"], url_path="resend-verification",
             permission_classes=[permissions.AllowAny])
     def resend_verification(self, request):
-        from users.signals.send_welcome_email import send_account_confirmation_email
         from django.utils import timezone
         from datetime import timedelta
 

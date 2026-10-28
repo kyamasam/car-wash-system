@@ -9,7 +9,15 @@ import {
 } from "@tanstack/react-query";
 import axios, { AxiosError, AxiosInstance } from "axios";
 import toast from "react-hot-toast";
+import { useSubscriptionUiStore } from "@/stores/subscription-ui-store";
 import { renderToast } from "./toast-renderer";
+
+declare module "axios" {
+  interface AxiosRequestConfig {
+    /** Skip the interceptor's success/error toasts (e.g. for polling). */
+    silent?: boolean;
+  }
+}
 
 /* ================================
    AXIOS INSTANCE
@@ -244,6 +252,7 @@ const showErrorToasts = (errors: ParsedError[]) => {
 axiosInstance.interceptors.response.use(
   (response) => {
     if (
+      !response.config.silent &&
       response.config.method &&
       response.config.method.toLowerCase() !== "get"
     ) {
@@ -255,9 +264,17 @@ axiosInstance.interceptors.response.use(
     const status = error.response?.status;
     const method = error.config?.method?.toLowerCase();
 
-    if (method && method !== "get") {
+    if (!error.config?.silent && method && method !== "get") {
       const parsedErrors = parseDjangoErrors(error);
       showErrorToasts(parsedErrors);
+    }
+
+    // Expired subscription: read-only mode. Refresh status and prompt to renew.
+    if (
+      status === 402 &&
+      error.response?.data?.errors?.[0]?.code === "subscription_expired"
+    ) {
+      useSubscriptionUiStore.getState().notifyExpired();
     }
 
     if (status === 401) {

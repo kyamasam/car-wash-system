@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { label: "Business", href: "/dashboard/settings/business" },
+  { label: "Subscription", href: "/dashboard/settings/subscription" },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
@@ -16,7 +17,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       <div>
         <h1 className="text-xl font-semibold">Settings</h1>
         <p className="text-sm text-muted-foreground">
-          Manage your business profile.
+          Manage your business profile and subscription.
         </p>
       </div>
 

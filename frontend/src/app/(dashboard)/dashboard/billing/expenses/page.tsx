@@ -7,6 +7,7 @@ import { useBillingStore } from "@/stores/billing-store";
 import { useActiveBranch } from "@/contexts/branch-context";
 import { RecordExpenseModal } from "@/components/billing/record-expense-modal";
 import { Button } from "@/components/ui/button";
+import { WriteGuard } from "@/components/subscriptions/write-guard";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { PaymentMethod } from "@/types/billing/payment";
@@ -55,10 +56,12 @@ export default function ExpensesPage() {
             Track money spent running the business.
           </p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>
-          <PlusIcon className="size-4" />
-          Record Expense
-        </Button>
+        <WriteGuard>
+          <Button onClick={() => setModalOpen(true)}>
+            <PlusIcon className="size-4" />
+            Record Expense
+          </Button>
+        </WriteGuard>
       </div>
 
       {/* Summary strip */}

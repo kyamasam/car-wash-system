@@ -15,6 +15,7 @@ import { ServiceDialog } from "@/components/services/service-dialog";
 import { ServicePriceDialog } from "@/components/services/service-price-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { WriteGuard } from "@/components/subscriptions/write-guard";
 import {
   Dialog,
   DialogContent,
@@ -167,10 +168,12 @@ export default function ServicesPage() {
             Manage the services your car wash offers.
           </p>
         </div>
-        <Button onClick={openNewService}>
-          <PlusIcon />
-          New Service
-        </Button>
+        <WriteGuard>
+          <Button onClick={openNewService}>
+            <PlusIcon />
+            New Service
+          </Button>
+        </WriteGuard>
       </div>
 
       {/* Filters */}
@@ -219,10 +222,12 @@ export default function ServicesPage() {
                 <p className="text-xs text-muted-foreground mt-1 mb-4">
                   Add your first service to get started.
                 </p>
-                <Button size="sm" onClick={openNewService}>
-                  <PlusIcon />
-                  Add Service
-                </Button>
+                <WriteGuard>
+                  <Button size="sm" onClick={openNewService}>
+                    <PlusIcon />
+                    Add Service
+                  </Button>
+                </WriteGuard>
               </>
             )}
           </div>

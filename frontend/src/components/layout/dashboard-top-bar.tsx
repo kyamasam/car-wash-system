@@ -31,6 +31,7 @@ const SEGMENT_MAP: Record<string, string> = {
   commissions: "Commissions",
   expenses: "Expenses",
   settings: "Settings",
+  subscription: "Subscription",
 };
 
 export function DashboardTopBar({ onMenuClick, isMobile, isSidebarOpen }: DashboardTopBarProps) {

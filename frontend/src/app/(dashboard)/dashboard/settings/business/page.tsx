@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { ImageUp, Lock, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { WriteGuard } from "@/components/subscriptions/write-guard";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -256,9 +257,11 @@ function BusinessForm({ business }: { business: Business }) {
         </div>
 
         <div className="pt-2">
-          <Button type="submit" disabled={isPending}>
-            {isPending ? "Saving…" : "Save changes"}
-          </Button>
+          <WriteGuard>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Saving…" : "Save changes"}
+            </Button>
+          </WriteGuard>
         </div>
       </form>
 
