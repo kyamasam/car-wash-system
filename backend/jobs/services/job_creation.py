@@ -126,7 +126,8 @@ def _manual_priority(qs, branch_id, vehicle_category):
 
 def build_job_items(job, items_data, branch_id, vehicle_category=None):
     """
-    Create JobItems for a job, locking in prices from ServicePrice.
+    Create JobItems for a job, locking in prices from ServicePrice
+    (or the per-sale custom_unit_price override when provided).
     Returns list of (JobItem, ServicePrice) pairs for downstream use (e.g. commission).
     """
     to_create = []
@@ -142,7 +143,12 @@ def build_job_items(job, items_data, branch_id, vehicle_category=None):
             quantity = Decimal(str(length)) * Decimal(str(width))
 
         service_price = item.get("service_price") or lookup_service_price(service_id, branch_id, vehicle_category)
-        unit_price = service_price.price
+        standard_unit_price = service_price.price
+        custom_unit_price = item.get("custom_unit_price")
+        if custom_unit_price is not None:
+            unit_price = Decimal(str(custom_unit_price))
+        else:
+            unit_price = standard_unit_price
         line_total = unit_price * quantity
 
         to_create.append(
@@ -153,6 +159,8 @@ def build_job_items(job, items_data, branch_id, vehicle_category=None):
                 length=length,
                 width=width,
                 unit_price=unit_price,
+                standard_unit_price=standard_unit_price,
+                is_custom_price=unit_price != standard_unit_price,
                 line_total=line_total,
                 description=item.get("description"),
                 tag_number=item.get("tag_number"),

@@ -8,6 +8,7 @@ import {
   Loader2Icon,
   MinusIcon,
   PlusIcon,
+  RotateCcwIcon,
   Trash2Icon,
   XIcon,
   UserPlusIcon,
@@ -48,6 +49,11 @@ const CATEGORIES: { value: "all" | ServiceCategory; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
+/** Unit price for a line: the per-sale override if set, otherwise the catalog price. */
+function effectiveUnitPrice(item: ServiceLineItem, standardPrice: string): number {
+  return item.customUnitPrice ?? Number(standardPrice);
+}
+
 export function CreateJobForm() {
   const router = useRouter();
   const { data: currentUser } = useCurrentUser();
@@ -76,6 +82,8 @@ export function CreateJobForm() {
   const [discount, setDiscount] = React.useState("");
   const [activeCategory, setActiveCategory] = React.useState<"all" | ServiceCategory>("all");
   const [priceModalService, setPriceModalService] = React.useState<Service | null>(null);
+  // Raw text of price inputs while typing, so the field can be cleared without snapping back
+  const [priceDrafts, setPriceDrafts] = React.useState<Record<string, string>>({});
   // Follows the business default until the user toggles it.
   const { data: business } = useCurrentBusiness();
   const [printCardOverride, setPrintCard] = React.useState<boolean | null>(null);
@@ -208,6 +216,32 @@ export function CreateJobForm() {
     );
   }
 
+  function setCustomUnitPrice(serviceId: string, value: string) {
+    setServiceItems((prev) =>
+      prev.map((item) =>
+        item.serviceId === serviceId
+          ? { ...item, customUnitPrice: value === "" ? undefined : Math.max(0, Number(value) || 0) }
+          : item
+      )
+    );
+  }
+
+  function resetCustomUnitPrice(serviceId: string) {
+    setServiceItems((prev) =>
+      prev.map((item) => (item.serviceId === serviceId ? { ...item, customUnitPrice: undefined } : item))
+    );
+    clearPriceDraft(serviceId);
+  }
+
+  function clearPriceDraft(serviceId: string) {
+    setPriceDrafts((prev) => {
+      if (!(serviceId in prev)) return prev;
+      const next = { ...prev };
+      delete next[serviceId];
+      return next;
+    });
+  }
+
   function removeItem(serviceId: string) {
     setServiceItems((prev) => prev.filter((i) => i.serviceId !== serviceId));
   }
@@ -215,7 +249,7 @@ export function CreateJobForm() {
   const total = serviceItems.reduce((sum, item) => {
     const service = servicesAll.find((s) => s.id === item.serviceId);
     const price = service?.prices.find((p) => p.id === item.selectedPriceId);
-    return sum + (price ? Number(price.price) * item.quantity : 0);
+    return sum + (price ? effectiveUnitPrice(item, price.price) * item.quantity : 0);
   }, 0);
 
   const getJobCardOptions = useJobCardOptions();
@@ -247,6 +281,9 @@ export function CreateJobForm() {
           ? { length: String(item.length), width: String(item.width) }
           : {}),
         ...(item.selectedPriceId ? { service_price: item.selectedPriceId } : {}),
+        ...(item.customUnitPrice !== undefined
+          ? { custom_unit_price: String(item.customUnitPrice) }
+          : {}),
       })),
     };
 
@@ -594,8 +631,13 @@ export function CreateJobForm() {
                   {serviceItems.map((item) => {
                     const service = servicesAll.find((s) => s.id === item.serviceId);
                     const price = service?.prices.find((p) => p.id === item.selectedPriceId);
+                    const unitPrice = price ? effectiveUnitPrice(item, price.price) : 0;
+                    const isCustom =
+                      price !== undefined &&
+                      item.customUnitPrice !== undefined &&
+                      item.customUnitPrice !== Number(price.price);
                     const priceLabel = price
-                      ? `KES ${(Number(price.price) * item.quantity).toLocaleString()}`
+                      ? `KES ${(unitPrice * item.quantity).toLocaleString()}`
                       : "—";
                     const sizeUnitLabel =
                       service?.unit === "by_size" && service.size_unit
@@ -608,34 +650,44 @@ export function CreateJobForm() {
                     const area = Number(item.quantity.toFixed(2));
 
                     return (
-                      <div key={item.serviceId} className="space-y-2 rounded-md border bg-muted/30 px-3 py-2">
+                      <div key={item.serviceId} className="space-y-3 rounded-lg border bg-muted/30 p-4">
                         <div className="flex items-start gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium leading-tight break-words">{item.serviceName}</p>
+                            <p className="text-base font-semibold leading-tight break-words">{item.serviceName}</p>
                             {price && sizeUnitLabel ? (
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-sm text-muted-foreground">
                                 {item.quantity > 0
-                                  ? `${item.length} × ${item.width} = ${area.toLocaleString()} ${sizeUnitLabel} × KES ${Number(price.price).toLocaleString()} = ${priceLabel}`
-                                  : `Enter size · KES ${Number(price.price).toLocaleString()} / ${sizeUnitLabel}`}
+                                  ? `${item.length} × ${item.width} = ${area.toLocaleString()} ${sizeUnitLabel} × KES ${unitPrice.toLocaleString()} = ${priceLabel}`
+                                  : `Enter size · KES ${unitPrice.toLocaleString()} / ${sizeUnitLabel}`}
                               </p>
                             ) : price ? (
-                              <p className="text-xs text-muted-foreground capitalize">
+                              <p className="text-sm text-muted-foreground capitalize">
                                 {price.size_label ?? price.vehicle_category ?? "Default"} · {priceLabel}
                               </p>
                             ) : (
-                              <p className="text-xs text-muted-foreground">{priceLabel}</p>
+                              <p className="text-sm text-muted-foreground">{priceLabel}</p>
+                            )}
+                            {isCustom && (
+                              <p className="text-sm text-amber-600 dark:text-amber-500">
+                                Custom price · was{" "}
+                                <span className="line-through">KES {Number(price.price).toLocaleString()}</span>
+                              </p>
                             )}
                           </div>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon-xs"
-                            onClick={() => removeItem(item.serviceId)}
+                            onClick={() => {
+                              removeItem(item.serviceId);
+                              clearPriceDraft(item.serviceId);
+                            }}
                             className="text-muted-foreground hover:text-destructive shrink-0"
                           >
                             <Trash2Icon />
                           </Button>
                         </div>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
                         {sizeUnitLabel ? (
                         <div className="flex items-center gap-1 shrink-0">
                           <Input
@@ -647,9 +699,9 @@ export function CreateJobForm() {
                             aria-label={`Length in ${dimensionUnitLabel}`}
                             value={item.length ? item.length : ""}
                             onChange={(e) => setDimension(item.serviceId, "length", e.target.value)}
-                            className="h-8 w-20 text-right text-sm tabular-nums"
+                            className="h-9 w-20 text-right text-sm tabular-nums"
                           />
-                          <span className="text-xs text-muted-foreground">×</span>
+                          <span className="text-sm text-muted-foreground">×</span>
                           <Input
                             type="number"
                             inputMode="decimal"
@@ -659,34 +711,76 @@ export function CreateJobForm() {
                             aria-label={`Width in ${dimensionUnitLabel}`}
                             value={item.width ? item.width : ""}
                             onChange={(e) => setDimension(item.serviceId, "width", e.target.value)}
-                            className="h-8 w-20 text-right text-sm tabular-nums"
+                            className="h-9 w-20 text-right text-sm tabular-nums"
                           />
-                          <span className="text-xs text-muted-foreground">{dimensionUnitLabel}</span>
+                          <span className="text-sm text-muted-foreground">{dimensionUnitLabel}</span>
                         </div>
                         ) : (
                         <div className="flex items-center gap-1 shrink-0">
                           <Button
                             type="button"
                             variant="outline"
-                            size="icon-xs"
+                            size="icon-sm"
                             onClick={() => updateQuantity(item.serviceId, -1)}
                             disabled={item.quantity <= 1}
                           >
                             <MinusIcon />
                           </Button>
-                          <span className="w-5 text-center text-sm font-medium tabular-nums">
+                          <span className="w-6 text-center text-base font-medium tabular-nums">
                             {item.quantity}
                           </span>
                           <Button
                             type="button"
                             variant="outline"
-                            size="icon-xs"
+                            size="icon-sm"
                             onClick={() => updateQuantity(item.serviceId, 1)}
                           >
                             <PlusIcon />
                           </Button>
                         </div>
                         )}
+                        {price && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm text-muted-foreground">KES</span>
+                            <Input
+                              type="number"
+                              inputMode="decimal"
+                              min="0"
+                              step="0.01"
+                              aria-label="Unit price"
+                              value={
+                                priceDrafts[item.serviceId] ??
+                                String(item.customUnitPrice ?? Number(price.price))
+                              }
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setPriceDrafts((prev) => ({ ...prev, [item.serviceId]: value }));
+                                setCustomUnitPrice(item.serviceId, value);
+                              }}
+                              onBlur={() => clearPriceDraft(item.serviceId)}
+                              className={cn(
+                                "h-9 w-28 text-right text-sm tabular-nums",
+                                isCustom && "border-amber-500"
+                              )}
+                            />
+                            <span className="text-sm text-muted-foreground">
+                              {sizeUnitLabel ? `/ ${sizeUnitLabel}` : "each"}
+                            </span>
+                            {isCustom && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Reset to standard price"
+                                onClick={() => resetCustomUnitPrice(item.serviceId)}
+                                className="text-muted-foreground"
+                              >
+                                <RotateCcwIcon />
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        </div>
                       </div>
                     );
                   })}
