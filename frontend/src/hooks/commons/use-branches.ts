@@ -10,11 +10,11 @@ export interface Branch {
   is_active: boolean;
 }
 
-export function useBranches() {
+export function useBranches(userId?: string) {
   return useApiQuery<Branch[], Branch[]>("/commons/branches/all/", {
-    queryKey: ["branches"],
+    queryKey: ["branches", userId],
     select: (data) => data,
     staleTime: 1000 * 60 * 10,
-    enabled: typeof window !== "undefined" && !!localStorage.getItem("authToken"),
+    enabled: !!userId,
   });
 }
