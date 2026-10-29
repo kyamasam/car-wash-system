@@ -3,6 +3,9 @@ import type { Payment } from "@/types/billing/payment";
 
 export type JobCardData = Job | JobDetail;
 
+export const DEFAULT_RECEIPT_FOOTER = "Thank you for your business.";
+export const DEFAULT_JOB_CARD_FOOTER = "Present this card when collecting.";
+
 export interface JobCardOptions {
   /** Used when `job.worker` is only an id (e.g. the create-job response). */
   workerName?: string;
@@ -13,6 +16,9 @@ export interface JobCardOptions {
   branchPhone?: string | null;
   /** ISO currency code for amounts; defaults to KES. */
   currency?: string | null;
+  /** Custom footer text; blank falls back to the default message. */
+  receiptFooter?: string | null;
+  jobCardFooter?: string | null;
 }
 
 const PAYMENT_STATUS_LABEL: Record<string, string> = {
@@ -97,6 +103,9 @@ function renderPayments(payments: Payment[], currency?: string | null): string {
 function renderDocHtml(job: JobCardData, opts: JobCardOptions, kind: DocKind): string {
   const isReceipt = kind === "receipt";
   const title = isReceipt ? "Receipt" : "Job Card";
+  const footer =
+    (isReceipt ? opts.receiptFooter : opts.jobCardFooter)?.trim() ||
+    (isReceipt ? DEFAULT_RECEIPT_FOOTER : DEFAULT_JOB_CARD_FOOTER);
   const customer = job.customer;
   const vehicle = job.vehicle;
   const vehicleDesc = vehicle
@@ -194,7 +203,7 @@ function renderDocHtml(job: JobCardData, opts: JobCardOptions, kind: DocKind): s
   ${job.notes ? `<hr /><div class="muted">Notes</div><div class="notes">${escapeHtml(job.notes)}</div>` : ""}
 
   <hr />
-  <div class="center muted">${isReceipt ? "Thank you for your business." : "Present this card when collecting."}</div>
+  <div class="center muted notes">${escapeHtml(footer)}</div>
 
 </body>
 </html>`;

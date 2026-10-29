@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/layout/page-header";
 
 const TABS = [
   { label: "Business", href: "/dashboard/settings/business" },
@@ -12,13 +13,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   const pathname = usePathname();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage your business profile.
-        </p>
-      </div>
+    <div className="space-y-3 md:space-y-6">
+      <PageHeader title="Settings" />
 
       <div className="flex gap-1 border-b border-border">
         {TABS.map((tab) => {

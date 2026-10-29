@@ -15,6 +15,8 @@ export function useJobCardOptions() {
         businessName: business?.name,
         businessLogo: business?.logo,
         currency: business?.currency,
+        receiptFooter: business?.receipt_footer,
+        jobCardFooter: business?.job_card_footer,
         branchName: branch?.name,
         branchLocation: branch?.location,
         branchPhone: branch?.phone,

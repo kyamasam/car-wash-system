@@ -27,6 +27,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { PaymentMethod, PaymentType } from "@/types/billing/payment";
+import { PageHeader } from "@/components/layout/page-header";
 
 const METHOD_LABEL: Record<PaymentMethod, string> = {
   cash: "Cash",
@@ -129,16 +130,8 @@ export default function BillingPage() {
     .reduce((sum, p) => sum + parseFloat(p.amount), 0);
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Billing</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            View all payment transactions.
-          </p>
-        </div>
-      </div>
+    <div className="flex flex-col gap-3 md:gap-6 md:p-6">
+      <PageHeader title="Billing" />
 
       {/* Summary strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">

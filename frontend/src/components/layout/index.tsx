@@ -6,3 +6,4 @@ export { SidebarToggle } from "./sidebar-toggle";
 export { UserMenu } from "./user-menu";
 export { DashboardTopBar } from "./dashboard-top-bar";
 export { TopNavigation } from "./top-navigation";
+export { PageHeader } from "./page-header";

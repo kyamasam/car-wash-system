@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Customer } from "@/types/customers/customer";
+import { PageHeader } from "@/components/layout/page-header";
 
 export default function CustomersPage() {
   const { customersList, customersListLoading, fetchCustomersList } = useCustomersStore();
@@ -40,19 +41,11 @@ export default function CustomersPage() {
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Customers</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your customer profiles and their vehicles.
-          </p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <PlusIcon />
-          New Customer
-        </Button>
-      </div>
+    <div className="flex flex-col gap-3 md:gap-6 md:p-6">
+      <PageHeader
+        title="Customers"
+        primaryAction={{ label: "New Customer", icon: PlusIcon, onClick: () => setCreateOpen(true) }}
+      />
 
       {/* Search */}
       <div className="relative w-full sm:max-w-sm">

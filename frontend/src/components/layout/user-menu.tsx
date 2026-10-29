@@ -16,9 +16,11 @@ import { LogOut, MoreHorizontal, Settings, User } from "lucide-react";
 interface UserMenuProps {
   isOpen?: boolean;
   dropdownSide?: "top" | "bottom" | "left" | "right";
+  /** Avatar-only trigger, for the mobile top bar */
+  compact?: boolean;
 }
 
-export function UserMenu({ isOpen = true, dropdownSide = "bottom" }: UserMenuProps) {
+export function UserMenu({ isOpen = true, dropdownSide = "bottom", compact = false }: UserMenuProps) {
   const { data: currentUser } = useCurrentUser();
   const { logout } = useLogout();
 
@@ -33,9 +35,10 @@ export function UserMenu({ isOpen = true, dropdownSide = "bottom" }: UserMenuPro
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            "flex items-center gap-[10px] px-[10px] py-2 rounded-[10px]",
-            "transition-all duration-200 cursor-pointer",
-            "hover:bg-[var(--neutral-border)]",
+            "flex items-center transition-all duration-200 cursor-pointer",
+            compact
+              ? "rounded-full"
+              : "gap-[10px] px-[10px] py-2 rounded-[10px] hover:bg-[var(--neutral-border)]",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
           )}
         >
@@ -59,29 +62,37 @@ export function UserMenu({ isOpen = true, dropdownSide = "bottom" }: UserMenuPro
             />
           </div>
 
-          {/* Name + email */}
-          <div
-            className={cn(
-              "flex-1 text-left overflow-hidden transition-all duration-300",
-              isOpen ? "opacity-100" : "opacity-0 w-0",
-            )}
-          >
-            <p className="text-[13px] font-semibold truncate">{name}</p>
-            <p className="text-[11px] text-[var(--neutral-muted)] truncate mt-px">{email}</p>
-          </div>
+          {!compact && (
+            <>
+              {/* Name + email */}
+              <div
+                className={cn(
+                  "flex-1 text-left overflow-hidden transition-all duration-300",
+                  isOpen ? "opacity-100" : "opacity-0 w-0",
+                )}
+              >
+                <p className="text-[13px] font-semibold truncate">{name}</p>
+                <p className="text-[11px] text-[var(--neutral-muted)] truncate mt-px">{email}</p>
+              </div>
 
-          {/* More icon */}
-          <MoreHorizontal
-            size={14}
-            className={cn(
-              "text-[var(--neutral-muted)] shrink-0 transition-all duration-300",
-              isOpen ? "opacity-100" : "opacity-0",
-            )}
-          />
+              {/* More icon */}
+              <MoreHorizontal
+                size={14}
+                className={cn(
+                  "text-[var(--neutral-muted)] shrink-0 transition-all duration-300",
+                  isOpen ? "opacity-100" : "opacity-0",
+                )}
+              />
+            </>
+          )}
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent side={dropdownSide} align="start" className="w-56 mb-1">
+      <DropdownMenuContent
+        side={dropdownSide}
+        align={compact ? "end" : "start"}
+        className="w-56 mb-1"
+      >
         <DropdownMenuLabel>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-semibold">{name}</p>
