@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Loader2Icon } from "lucide-react";
+import { EyeIcon, Loader2Icon } from "lucide-react";
 
 import { useJobsStore } from "@/stores/jobs-store";
 import { Badge } from "@/components/ui/badge";
@@ -167,8 +167,9 @@ function JobCard({ job }: { job: Job }) {
           </Button>
         )}
         <Link href={`/dashboard/jobs/${job.id}`} className="ml-auto">
-          <Button variant="ghost" size="sm" className="h-7 text-xs">
-            View
+          <Button variant="outline">
+            <EyeIcon className="size-4" />
+            View details
           </Button>
         </Link>
       </div>

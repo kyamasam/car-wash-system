@@ -49,6 +49,14 @@ const CATEGORIES: { value: "all" | ServiceCategory; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
+// Larger touch targets on mobile for the customer/vehicle pickers; desktop keeps the compact size
+const PICKER_INPUT = "h-12 text-base lg:h-9 lg:text-sm";
+const PICKER_OPTION = "flex w-full flex-col px-4 py-3 text-left hover:bg-accent transition-colors lg:px-3 lg:py-2";
+const PICKER_CHIP = "flex items-center gap-2 rounded-md border bg-muted/40 px-4 py-3 lg:px-3 lg:py-2";
+const PICKER_PRIMARY_TEXT = "text-base font-medium lg:text-sm";
+const PICKER_SECONDARY_TEXT = "text-sm text-muted-foreground lg:text-xs";
+const PICKER_CLEAR = "shrink-0 rounded p-2 -m-1 text-muted-foreground hover:text-foreground lg:p-0.5 lg:m-0";
+
 /** Unit price for a line: the per-sale override if set, otherwise the catalog price. */
 function effectiveUnitPrice(item: ServiceLineItem, standardPrice: string): number {
   return item.customUnitPrice ?? Number(standardPrice);
@@ -121,6 +129,13 @@ export function CreateJobForm() {
   const phoneSearchSettled =
     phoneSearchReady && customerSearchQuery === phoneQuery.trim() && !customerSearchFetching;
   const phoneSearchResults = phoneSearchReady ? (customerSearch?.results ?? []).slice(0, 6) : [];
+
+  // Open the new-customer form as soon as a search settles with no match, so staff
+  // don't have to press Enter (awkward on mobile keyboards)
+  const noCustomerMatch = phoneSearchSettled && phoneSearchResults.length === 0;
+  React.useEffect(() => {
+    if (noCustomerMatch && !selectedCustomer) setShowCreateForm(true);
+  }, [noCustomerMatch, selectedCustomer]);
 
   const plateSearchResults = plateQuery.length >= 1
     ? filteredVehicles
@@ -291,8 +306,15 @@ export function CreateJobForm() {
     } else if (showCreateForm && phoneQuery.trim()) {
       payload.customer_data = { phone: phoneQuery.trim(), name: newCustomerName.trim() };
     }
-    if (vehicleId) payload.vehicle_id = vehicleId;
-    else if (newVehiclePlate.trim()) payload.vehicle_data = { plate_number: newVehiclePlate.trim().toUpperCase() };
+    if (vehicleId) {
+      payload.vehicle_id = vehicleId;
+    } else if (showVehicleSelector) {
+      // A plate typed but not confirmed with Enter still counts
+      const plate = (newVehiclePlate || plateQuery).trim().toUpperCase();
+      const existing = plate && filteredVehicles.find((v) => v.plate_number.toUpperCase() === plate);
+      if (existing) payload.vehicle_id = existing.id;
+      else if (plate) payload.vehicle_data = { plate_number: plate };
+    }
     if (workerId) payload.worker = workerId;
     if (notes.trim()) payload.notes = notes.trim();
     if (discount.trim()) payload.discount_amount = discount.trim();
@@ -398,21 +420,22 @@ export function CreateJobForm() {
 
               {/* Selected customer chip */}
               {selectedCustomer ? (
-                <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+                <div className={PICKER_CHIP}>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
+                    <p className={cn(PICKER_PRIMARY_TEXT, "truncate")}>
                       {selectedCustomer.name ?? selectedCustomer.phone}
                     </p>
                     {selectedCustomer.name && (
-                      <p className="text-xs text-muted-foreground">{selectedCustomer.phone}</p>
+                      <p className={PICKER_SECONDARY_TEXT}>{selectedCustomer.phone}</p>
                     )}
                   </div>
                   <button
                     type="button"
                     onClick={clearCustomer}
-                    className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear customer"
+                    className={PICKER_CLEAR}
                   >
-                    <XIcon className="size-4" />
+                    <XIcon className="size-5 lg:size-4" />
                   </button>
                 </div>
               ) : (
@@ -421,6 +444,7 @@ export function CreateJobForm() {
                   <div className="relative">
                     <Input
                       placeholder="Search by phone or name..."
+                      className={PICKER_INPUT}
                       value={phoneQuery}
                       onChange={(e) => {
                         setPhoneQuery(e.target.value);
@@ -453,20 +477,20 @@ export function CreateJobForm() {
                               <button
                                 type="button"
                                 onClick={() => selectCustomer(customer)}
-                                className="flex w-full flex-col px-3 py-2 text-left hover:bg-accent transition-colors"
+                                className={PICKER_OPTION}
                               >
-                                <span className="text-sm font-medium">
+                                <span className={PICKER_PRIMARY_TEXT}>
                                   {customer.name ?? customer.phone}
                                 </span>
                                 {customer.name && (
-                                  <span className="text-xs text-muted-foreground">{customer.phone}</span>
+                                  <span className={PICKER_SECONDARY_TEXT}>{customer.phone}</span>
                                 )}
                               </button>
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="px-3 py-2 text-sm text-muted-foreground">
+                        <p className="px-4 py-3 text-base text-muted-foreground lg:px-3 lg:py-2 lg:text-sm">
                           {phoneSearchSettled ? "No customer found." : "Searching…"}
                         </p>
                       )}
@@ -477,9 +501,9 @@ export function CreateJobForm() {
                           <button
                             type="button"
                             onClick={() => setShowCreateForm(true)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-accent transition-colors"
+                            className="flex w-full items-center gap-2 px-4 py-3 text-base text-primary hover:bg-accent transition-colors lg:px-3 lg:py-2 lg:text-sm"
                           >
-                            <UserPlusIcon className="size-4" />
+                            <UserPlusIcon className="size-5 lg:size-4" />
                             New customer
                           </button>
                         </div>
@@ -495,7 +519,7 @@ export function CreateJobForm() {
                         <button
                           type="button"
                           onClick={() => setShowCreateForm(false)}
-                          className="text-xs text-muted-foreground hover:text-foreground"
+                          className="-my-2 py-2 text-sm text-muted-foreground hover:text-foreground lg:my-0 lg:py-0 lg:text-xs"
                         >
                           Cancel
                         </button>
@@ -508,6 +532,8 @@ export function CreateJobForm() {
                           onChange={(e) => setPhoneQuery(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
                           placeholder="Phone number"
+                          inputMode="tel"
+                          className={PICKER_INPUT}
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -520,6 +546,7 @@ export function CreateJobForm() {
                           onChange={(e) => setNewCustomerName(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
                           placeholder="Customer name"
+                          className={PICKER_INPUT}
                         />
                       </div>
                     </div>
@@ -535,14 +562,14 @@ export function CreateJobForm() {
 
                 {/* Selected vehicle chip */}
                 {(vehicleId || newVehiclePlate) ? (
-                  <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+                  <div className={PICKER_CHIP}>
                     <div className="flex-1 min-w-0">
                       {vehicleId ? (
-                        <p className="text-sm font-medium truncate">
+                        <p className={cn(PICKER_PRIMARY_TEXT, "truncate")}>
                           {allVehicles.find((v) => v.id === vehicleId)?.plate_number ?? "Vehicle"}
                         </p>
                       ) : (
-                        <p className="text-sm font-medium truncate">
+                        <p className={cn(PICKER_PRIMARY_TEXT, "truncate")}>
                           {newVehiclePlate}{" "}
                           <span className="text-xs font-normal text-muted-foreground">(new)</span>
                         </p>
@@ -551,9 +578,10 @@ export function CreateJobForm() {
                     <button
                       type="button"
                       onClick={() => { setVehicleId(""); setNewVehiclePlate(""); setPlateQuery(""); }}
-                      className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                      aria-label="Clear vehicle"
+                      className={PICKER_CLEAR}
                     >
-                      <XIcon className="size-4" />
+                      <XIcon className="size-5 lg:size-4" />
                     </button>
                   </div>
                 ) : (
@@ -562,6 +590,8 @@ export function CreateJobForm() {
                     <div className="relative">
                       <Input
                         placeholder="Type plate number..."
+                        autoCapitalize="characters"
+                        className={PICKER_INPUT}
                         value={plateQuery}
                         onChange={(e) => setPlateQuery(e.target.value.toUpperCase())}
                         onKeyDown={(e) => {
@@ -593,11 +623,11 @@ export function CreateJobForm() {
                                 <button
                                   type="button"
                                   onClick={() => { setVehicleId(vehicle.id); setPlateQuery(""); }}
-                                  className="flex w-full flex-col px-3 py-2 text-left hover:bg-accent transition-colors"
+                                  className={PICKER_OPTION}
                                 >
-                                  <span className="text-sm font-medium">{vehicle.plate_number}</span>
+                                  <span className={PICKER_PRIMARY_TEXT}>{vehicle.plate_number}</span>
                                   {(vehicle.make || vehicle.model) && (
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className={PICKER_SECONDARY_TEXT}>
                                       {[vehicle.make, vehicle.model, vehicle.color].filter(Boolean).join(" · ")}
                                     </span>
                                   )}
@@ -606,9 +636,9 @@ export function CreateJobForm() {
                             ))}
                           </ul>
                         ) : (
-                          <div className="flex items-center justify-between px-3 py-2">
-                            <span className="text-sm text-muted-foreground">No match — press Enter to use this plate</span>
-                          </div>
+                          <p className="px-4 py-3 text-base text-muted-foreground lg:px-3 lg:py-2 lg:text-sm">
+                            No match — <span className="font-medium text-foreground">{plateQuery.trim()}</span> will be added as a new vehicle
+                          </p>
                         )}
                       </div>
                     )}

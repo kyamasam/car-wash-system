@@ -9,6 +9,7 @@ import {
   LayoutGridIcon,
   ListIcon,
   CalendarIcon,
+  EyeIcon,
 } from "lucide-react";
 
 import { useJobsStore } from "@/stores/jobs-store";
@@ -458,7 +459,10 @@ export default function JobsPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link href={`/dashboard/jobs/${job.id}`}>
-                      <Button variant="ghost" size="sm">View</Button>
+                      <Button variant="outline">
+                        <EyeIcon className="size-4" />
+                        View details
+                      </Button>
                     </Link>
                   </td>
                 </tr>
