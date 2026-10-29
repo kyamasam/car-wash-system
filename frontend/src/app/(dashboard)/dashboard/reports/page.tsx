@@ -11,6 +11,7 @@ import { ServicePopularityReport } from "@/components/reports/services/service-p
 import { ExpenseReport } from "@/components/reports/expenses/expense-report";
 import { CommissionSummaryReport } from "@/components/reports/commissions/commission-summary-report";
 import { defaultFilters, type ReportFilters } from "@/types/reports/filters";
+import { PageHeader } from "@/components/layout/page-header";
 
 const GRANULARITY_TABS = new Set(["revenue", "profit", "expenses"]);
 
@@ -20,12 +21,7 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">Reports</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Analytics and insights across your car wash operations.
-        </p>
-      </div>
+      <PageHeader title="Reports" />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex flex-col gap-3">

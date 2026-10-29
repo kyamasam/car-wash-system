@@ -10,6 +10,10 @@ class Customer(UtilColumnsModel):
     phone = models.CharField(max_length=20, unique=True)
     email = models.EmailField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    branch = models.ForeignKey(
+        "commons.Branch", on_delete=models.SET_NULL, null=True, blank=True, related_name="customers",
+        help_text="Branch where the customer was first created",
+    )
 
     def __str__(self):
         return self.phone
@@ -25,6 +29,10 @@ class Vehicle(UtilColumnsModel):
     make = models.CharField(max_length=100, blank=True, null=True)
     model = models.CharField(max_length=100, blank=True, null=True)
     color = models.CharField(max_length=50, blank=True, null=True)
+    branch = models.ForeignKey(
+        "commons.Branch", on_delete=models.SET_NULL, null=True, blank=True, related_name="vehicles",
+        help_text="Branch where the vehicle was first created",
+    )
 
     def __str__(self):
         return self.plate_number

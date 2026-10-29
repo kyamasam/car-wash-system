@@ -7,6 +7,8 @@ export interface Business {
   logo: string | null;
   currency: Currency | null;
   print_job_card_by_default: boolean;
+  receipt_footer: string;
+  job_card_footer: string;
   primary_user: string | null;
   is_active: boolean;
   created_at: string;

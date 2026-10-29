@@ -78,11 +78,22 @@ class _JobItemInputSerializer(serializers.Serializer):
     width = serializers.DecimalField(
         max_digits=10, decimal_places=2, min_value=Decimal("0.01"), required=False, allow_null=True
     )
+    custom_unit_price = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("0"), required=False, allow_null=True
+    )
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     tag_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     def validate(self, attrs):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user and user.is_authenticated and not user.is_superuser:
+            if attrs["service"].business_id != user.business_id:
+                raise serializers.ValidationError({"service": "Service does not belong to your business."})
+            service_price = attrs.get("service_price")
+            if service_price and service_price.service_id != attrs["service"].id:
+                raise serializers.ValidationError({"service_price": "Price does not belong to this service."})
         if attrs["service"].unit == PricingUnit.BY_SIZE:
             if not attrs.get("length") or not attrs.get("width"):
                 raise serializers.ValidationError(
@@ -151,10 +162,10 @@ class JobCreateSerializer(serializers.ModelSerializer):
         branch = request.user.branch
 
         # 1. Resolve customer (existing, new, or anonymous)
-        customer = resolve_customer(customer_id=customer_id, customer_data=customer_data)
+        customer = resolve_customer(customer_id=customer_id, customer_data=customer_data, branch=branch)
 
         # 2. Resolve vehicle (by UUID, inline data, or omitted)
-        vehicle = resolve_vehicle(vehicle_id=vehicle_id, vehicle_data=vehicle_data, customer=customer)
+        vehicle = resolve_vehicle(vehicle_id=vehicle_id, vehicle_data=vehicle_data, customer=customer, branch=branch)
         vehicle_category = vehicle.vehicle_category if vehicle else None
 
         # 3. Create the job shell — totals will be filled after items are created

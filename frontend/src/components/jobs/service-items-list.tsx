@@ -16,6 +16,8 @@ export interface ServiceLineItem {
   length?: number;
   width?: number;
   selectedPriceId?: string;
+  /** Per-sale unit price override; falls back to the selected price when unset */
+  customUnitPrice?: number;
 }
 
 interface ServiceItemsListProps {

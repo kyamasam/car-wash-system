@@ -26,6 +26,9 @@ class Business(UtilColumnsModel):
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, null=True, blank=True)
     # Default state of the "Print job card" checkbox when creating a job.
     print_job_card_by_default = models.BooleanField(default=True)
+    # Free text printed at the bottom of receipts / job cards; blank = default text.
+    receipt_footer = models.TextField(blank=True, default="")
+    job_card_footer = models.TextField(blank=True, default="")
 
     class Meta:
         verbose_name_plural = "businesses"

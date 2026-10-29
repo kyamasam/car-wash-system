@@ -5,6 +5,8 @@ from commons.models import Business, Branch
 
 class BusinessSerializer(serializers.ModelSerializer):
     logo = serializers.ImageField(required=False, allow_null=True)
+    receipt_footer = serializers.CharField(required=False, allow_blank=True, max_length=500)
+    job_card_footer = serializers.CharField(required=False, allow_blank=True, max_length=500)
 
     class Meta:
         model = Business

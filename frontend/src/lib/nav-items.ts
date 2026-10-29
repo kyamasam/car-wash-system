@@ -4,6 +4,8 @@ export interface NavItem {
   title: string;
   href: string;
   icon: React.ElementType;
+  /** Optional subtitle shown under the title in the mobile drawer */
+  description?: string;
   badge?: number;
   section: "main" | "other";
 }

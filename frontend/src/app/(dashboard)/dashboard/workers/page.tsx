@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Worker } from "@/types/workers/worker";
+import { PageHeader } from "@/components/layout/page-header";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = React.useState(value);
@@ -51,21 +52,15 @@ export default function WorkersPage() {
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Workers</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your car wash team members.
-          </p>
-        </div>
-        {currentUser?.branch && (
-          <Button onClick={() => setCreateOpen(true)}>
-            <PlusIcon />
-            New Worker
-          </Button>
-        )}
-      </div>
+    <div className="flex flex-col gap-3 md:gap-6 md:p-6">
+      <PageHeader
+        title="Workers"
+        primaryAction={
+          currentUser?.branch
+            ? { label: "New Worker", icon: PlusIcon, onClick: () => setCreateOpen(true) }
+            : undefined
+        }
+      />
 
       {/* Search */}
       <div className="relative w-full sm:max-w-sm">

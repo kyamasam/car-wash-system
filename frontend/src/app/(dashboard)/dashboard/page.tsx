@@ -8,6 +8,8 @@ import { useJobsStore } from "@/stores/jobs-store";
 import { Activity, Car, CheckCircle2, Receipt, Wallet } from "lucide-react";
 import type { ElementType } from "react";
 import { useEffect } from "react";
+import { PageHeader } from "@/components/layout/page-header";
+import { cn } from "@/lib/utils";
 
 function formatKes(value: number) {
   return `KES ${value.toLocaleString("en-KE", { maximumFractionDigits: 0 })}`;
@@ -15,32 +17,37 @@ function formatKes(value: number) {
 
 function StatCard({
   label,
+  shortLabel,
   value,
   sub,
   icon: Icon,
   loading,
+  className,
 }: {
   label: string;
+  shortLabel?: string;
   value: string;
   sub: string;
   icon: ElementType;
   loading?: boolean;
+  className?: string;
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          {label}
+    <Card className={cn("gap-1 py-3 md:gap-6 md:py-6", className)}>
+      <CardHeader className="flex flex-row items-center justify-between px-3 pb-0 md:px-6 md:pb-2">
+        <CardTitle className="truncate text-[10px] md:text-xs font-semibold uppercase tracking-wider md:tracking-widest text-muted-foreground">
+          <span className="md:hidden">{shortLabel ?? label}</span>
+          <span className="hidden md:inline">{label}</span>
         </CardTitle>
-        <Icon className="w-4 h-4 text-muted-foreground" />
+        <Icon className="hidden md:block w-4 h-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 md:px-6">
         {loading ? (
-          <div className="h-9 w-16 rounded bg-muted animate-pulse mb-1" />
+          <div className="h-6 md:h-9 w-16 rounded bg-muted animate-pulse mb-1" />
         ) : (
-          <p className="text-3xl font-black tracking-tight">{value}</p>
+          <p className="whitespace-nowrap text-lg md:text-3xl font-black tracking-tight">{value}</p>
         )}
-        <p className="text-xs text-muted-foreground mt-1">{sub}</p>
+        <p className="hidden md:block text-xs text-muted-foreground mt-1">{sub}</p>
       </CardContent>
     </Card>
   );
@@ -104,18 +111,14 @@ export default function DashboardPage() {
   const activeJobsList = jobsList?.results ?? [];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Overview</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Your car wash operations at a glance.
-        </p>
-      </div>
+    <div className="space-y-3 md:space-y-6">
+      <PageHeader title="Today's Overview" />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-4">
 
         <StatCard
           label="Active Jobs"
+          shortLabel="Active Jobs"
           value={activeJobs ?? "—"}
           sub="Currently in progress"
           icon={Activity}
@@ -123,6 +126,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Completed Today"
+          shortLabel="Done Today"
           value={completedToday ?? "—"}
           sub="Ready or collected"
           icon={CheckCircle2}
@@ -130,6 +134,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Revenue Today"
+          shortLabel="Revenue"
           value={revenueToday ?? "—"}
           sub="Payments received today"
           icon={Wallet}
@@ -137,6 +142,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Expenses Today"
+          shortLabel="Expenses"
           value={expensesToday ?? "—"}
           sub="Expenses recorded today"
           icon={Receipt}
@@ -144,6 +150,8 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Profit Today"
+          shortLabel="Profit"
+          className="col-span-2 md:col-span-1"
           value={profitToday ?? "—"}
           sub="Profit (Revenue - Commissions - expenses)"
           icon={Car}

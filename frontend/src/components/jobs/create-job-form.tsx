@@ -8,6 +8,7 @@ import {
   Loader2Icon,
   MinusIcon,
   PlusIcon,
+  RotateCcwIcon,
   Trash2Icon,
   XIcon,
   UserPlusIcon,
@@ -16,7 +17,7 @@ import Link from "next/link";
 
 import { useApiMutation } from "@/hooks/use-api";
 import { useCurrentUser } from "@/hooks/auth/use-current-user";
-import { useCustomersStore } from "@/stores/customers-store";
+import { CUSTOMER_SEARCH_MIN_LENGTH, useCustomerSearch } from "@/hooks/customers/use-customer-search";
 import { useVehiclesStore } from "@/stores/vehicles-store";
 import { useWorkersStore } from "@/stores/workers-store";
 import { useServicesStore } from "@/stores/services-store";
@@ -48,24 +49,36 @@ const CATEGORIES: { value: "all" | ServiceCategory; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
+// Larger touch targets on mobile for the customer/vehicle pickers; desktop keeps the compact size
+const PICKER_INPUT = "h-12 text-base lg:h-9 lg:text-sm";
+const PICKER_OPTION = "flex w-full flex-col px-4 py-3 text-left hover:bg-accent transition-colors lg:px-3 lg:py-2";
+const PICKER_CHIP = "flex items-center gap-2 rounded-md border bg-muted/40 px-4 py-3 lg:px-3 lg:py-2";
+const PICKER_PRIMARY_TEXT = "text-base font-medium lg:text-sm";
+const PICKER_SECONDARY_TEXT = "text-sm text-muted-foreground lg:text-xs";
+const PICKER_CLEAR = "shrink-0 rounded p-2 -m-1 text-muted-foreground hover:text-foreground lg:p-0.5 lg:m-0";
+
+/** Unit price for a line: the per-sale override if set, otherwise the catalog price. */
+function effectiveUnitPrice(item: ServiceLineItem, standardPrice: string): number {
+  return item.customUnitPrice ?? Number(standardPrice);
+}
+
 export function CreateJobForm() {
   const router = useRouter();
   const { data: currentUser } = useCurrentUser();
 
-  const { customersAll, customersAllLoading, fetchCustomersAll } = useCustomersStore();
   const { vehiclesAll, vehiclesAllLoading, fetchVehiclesAll } = useVehiclesStore();
   const { workersAll, workersAllLoading, fetchWorkersAll } = useWorkersStore();
   const { servicesAll, servicesAllLoading, fetchServicesAll } = useServicesStore();
 
   React.useEffect(() => {
-    fetchCustomersAll();
     fetchVehiclesAll();
     fetchWorkersAll();
     fetchServicesAll();
   }, []);
 
   // Form state
-  const [customerId, setCustomerId] = React.useState("");
+  const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
+  const customerId = selectedCustomer?.id ?? "";
   const [vehicleId, setVehicleId] = React.useState("");
   const [workerId, setWorkerId] = React.useState("");
   const [serviceItems, setServiceItems] = React.useState<ServiceLineItem[]>([]);
@@ -76,6 +89,8 @@ export function CreateJobForm() {
   const [discount, setDiscount] = React.useState("");
   const [activeCategory, setActiveCategory] = React.useState<"all" | ServiceCategory>("all");
   const [priceModalService, setPriceModalService] = React.useState<Service | null>(null);
+  // Raw text of price inputs while typing, so the field can be cleared without snapping back
+  const [priceDrafts, setPriceDrafts] = React.useState<Record<string, string>>({});
   // Follows the business default until the user toggles it.
   const { data: business } = useCurrentBusiness();
   const [printCardOverride, setPrintCard] = React.useState<boolean | null>(null);
@@ -91,10 +106,8 @@ export function CreateJobForm() {
   const [newVehiclePlate, setNewVehiclePlate] = React.useState("");
 
   // Track newly created workers so they appear in dropdown immediately
-  const [extraCustomers, setExtraCustomers] = React.useState<Customer[]>([]);
   const [extraWorkers, setExtraWorkers] = React.useState<Worker[]>([]);
 
-  const allCustomers = [...customersAll, ...extraCustomers.filter((ec) => !customersAll.find((c) => c.id === ec.id))];
   const allVehicles = vehiclesAll;
   const allWorkers = [...workersAll, ...extraWorkers.filter((ew) => !workersAll.find((w) => w.id === ew.id))];
 
@@ -106,14 +119,23 @@ export function CreateJobForm() {
     ? servicesAll
     : servicesAll.filter((s) => s.category === activeCategory);
 
-  const selectedCustomer = allCustomers.find((c) => c.id === customerId) ?? null;
+  const {
+    data: customerSearch,
+    isFetching: customerSearchFetching,
+    debouncedQuery: customerSearchQuery,
+  } = useCustomerSearch(phoneQuery);
+  const phoneSearchReady = phoneQuery.trim().length >= CUSTOMER_SEARCH_MIN_LENGTH;
+  // Results are settled once the debounced query has caught up and nothing is in flight
+  const phoneSearchSettled =
+    phoneSearchReady && customerSearchQuery === phoneQuery.trim() && !customerSearchFetching;
+  const phoneSearchResults = phoneSearchReady ? (customerSearch?.results ?? []).slice(0, 6) : [];
 
-  const phoneSearchResults = phoneQuery.length >= 2
-    ? allCustomers.filter((c) =>
-        c.phone.includes(phoneQuery) ||
-        c.name?.toLowerCase().includes(phoneQuery.toLowerCase())
-      ).slice(0, 6)
-    : [];
+  // Open the new-customer form as soon as a search settles with no match, so staff
+  // don't have to press Enter (awkward on mobile keyboards)
+  const noCustomerMatch = phoneSearchSettled && phoneSearchResults.length === 0;
+  React.useEffect(() => {
+    if (noCustomerMatch && !selectedCustomer) setShowCreateForm(true);
+  }, [noCustomerMatch, selectedCustomer]);
 
   const plateSearchResults = plateQuery.length >= 1
     ? filteredVehicles
@@ -128,14 +150,14 @@ export function CreateJobForm() {
   }));
 
   function selectCustomer(customer: Customer) {
-    setCustomerId(customer.id);
+    setSelectedCustomer(customer);
     setPhoneQuery("");
     setShowCreateForm(false);
     setNewCustomerName("");
   }
 
   function clearCustomer() {
-    setCustomerId("");
+    setSelectedCustomer(null);
     setVehicleId("");
     setNewVehiclePlate("");
     setPlateQuery("");
@@ -208,6 +230,32 @@ export function CreateJobForm() {
     );
   }
 
+  function setCustomUnitPrice(serviceId: string, value: string) {
+    setServiceItems((prev) =>
+      prev.map((item) =>
+        item.serviceId === serviceId
+          ? { ...item, customUnitPrice: value === "" ? undefined : Math.max(0, Number(value) || 0) }
+          : item
+      )
+    );
+  }
+
+  function resetCustomUnitPrice(serviceId: string) {
+    setServiceItems((prev) =>
+      prev.map((item) => (item.serviceId === serviceId ? { ...item, customUnitPrice: undefined } : item))
+    );
+    clearPriceDraft(serviceId);
+  }
+
+  function clearPriceDraft(serviceId: string) {
+    setPriceDrafts((prev) => {
+      if (!(serviceId in prev)) return prev;
+      const next = { ...prev };
+      delete next[serviceId];
+      return next;
+    });
+  }
+
   function removeItem(serviceId: string) {
     setServiceItems((prev) => prev.filter((i) => i.serviceId !== serviceId));
   }
@@ -215,7 +263,7 @@ export function CreateJobForm() {
   const total = serviceItems.reduce((sum, item) => {
     const service = servicesAll.find((s) => s.id === item.serviceId);
     const price = service?.prices.find((p) => p.id === item.selectedPriceId);
-    return sum + (price ? Number(price.price) * item.quantity : 0);
+    return sum + (price ? effectiveUnitPrice(item, price.price) * item.quantity : 0);
   }, 0);
 
   const getJobCardOptions = useJobCardOptions();
@@ -247,6 +295,9 @@ export function CreateJobForm() {
           ? { length: String(item.length), width: String(item.width) }
           : {}),
         ...(item.selectedPriceId ? { service_price: item.selectedPriceId } : {}),
+        ...(item.customUnitPrice !== undefined
+          ? { custom_unit_price: String(item.customUnitPrice) }
+          : {}),
       })),
     };
 
@@ -255,8 +306,15 @@ export function CreateJobForm() {
     } else if (showCreateForm && phoneQuery.trim()) {
       payload.customer_data = { phone: phoneQuery.trim(), name: newCustomerName.trim() };
     }
-    if (vehicleId) payload.vehicle_id = vehicleId;
-    else if (newVehiclePlate.trim()) payload.vehicle_data = { plate_number: newVehiclePlate.trim().toUpperCase() };
+    if (vehicleId) {
+      payload.vehicle_id = vehicleId;
+    } else if (showVehicleSelector) {
+      // A plate typed but not confirmed with Enter still counts
+      const plate = (newVehiclePlate || plateQuery).trim().toUpperCase();
+      const existing = plate && filteredVehicles.find((v) => v.plate_number.toUpperCase() === plate);
+      if (existing) payload.vehicle_id = existing.id;
+      else if (plate) payload.vehicle_data = { plate_number: plate };
+    }
     if (workerId) payload.worker = workerId;
     if (notes.trim()) payload.notes = notes.trim();
     if (discount.trim()) payload.discount_amount = discount.trim();
@@ -271,7 +329,7 @@ export function CreateJobForm() {
   const canSubmit =
     serviceItems.length > 0 && serviceItems.every((item) => item.quantity > 0) && !isPending;
   const showVehicleSelector = !!customerId || showCreateForm;
-  const showSearchResults = !customerId && phoneQuery.length >= 2;
+  const showSearchResults = !customerId && phoneSearchReady;
 
   return (
     <>
@@ -362,21 +420,22 @@ export function CreateJobForm() {
 
               {/* Selected customer chip */}
               {selectedCustomer ? (
-                <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+                <div className={PICKER_CHIP}>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
+                    <p className={cn(PICKER_PRIMARY_TEXT, "truncate")}>
                       {selectedCustomer.name ?? selectedCustomer.phone}
                     </p>
                     {selectedCustomer.name && (
-                      <p className="text-xs text-muted-foreground">{selectedCustomer.phone}</p>
+                      <p className={PICKER_SECONDARY_TEXT}>{selectedCustomer.phone}</p>
                     )}
                   </div>
                   <button
                     type="button"
                     onClick={clearCustomer}
-                    className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear customer"
+                    className={PICKER_CLEAR}
                   >
-                    <XIcon className="size-4" />
+                    <XIcon className="size-5 lg:size-4" />
                   </button>
                 </div>
               ) : (
@@ -385,6 +444,7 @@ export function CreateJobForm() {
                   <div className="relative">
                     <Input
                       placeholder="Search by phone or name..."
+                      className={PICKER_INPUT}
                       value={phoneQuery}
                       onChange={(e) => {
                         setPhoneQuery(e.target.value);
@@ -393,16 +453,16 @@ export function CreateJobForm() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
-                          if (phoneSearchResults.length === 0 && phoneQuery.length >= 2) {
+                          if (!phoneSearchSettled) return;
+                          if (phoneSearchResults.length === 0) {
                             setShowCreateForm(true);
                           } else if (phoneSearchResults.length === 1) {
                             selectCustomer(phoneSearchResults[0]);
                           }
                         }
                       }}
-                      disabled={customersAllLoading}
                     />
-                    {customersAllLoading && (
+                    {customerSearchFetching && (
                       <Loader2Icon className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-muted-foreground" />
                     )}
                   </div>
@@ -417,20 +477,22 @@ export function CreateJobForm() {
                               <button
                                 type="button"
                                 onClick={() => selectCustomer(customer)}
-                                className="flex w-full flex-col px-3 py-2 text-left hover:bg-accent transition-colors"
+                                className={PICKER_OPTION}
                               >
-                                <span className="text-sm font-medium">
+                                <span className={PICKER_PRIMARY_TEXT}>
                                   {customer.name ?? customer.phone}
                                 </span>
                                 {customer.name && (
-                                  <span className="text-xs text-muted-foreground">{customer.phone}</span>
+                                  <span className={PICKER_SECONDARY_TEXT}>{customer.phone}</span>
                                 )}
                               </button>
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="px-3 py-2 text-sm text-muted-foreground">No customer found.</p>
+                        <p className="px-4 py-3 text-base text-muted-foreground lg:px-3 lg:py-2 lg:text-sm">
+                          {phoneSearchSettled ? "No customer found." : "Searching…"}
+                        </p>
                       )}
 
                       {/* New customer trigger */}
@@ -439,9 +501,9 @@ export function CreateJobForm() {
                           <button
                             type="button"
                             onClick={() => setShowCreateForm(true)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-accent transition-colors"
+                            className="flex w-full items-center gap-2 px-4 py-3 text-base text-primary hover:bg-accent transition-colors lg:px-3 lg:py-2 lg:text-sm"
                           >
-                            <UserPlusIcon className="size-4" />
+                            <UserPlusIcon className="size-5 lg:size-4" />
                             New customer
                           </button>
                         </div>
@@ -457,7 +519,7 @@ export function CreateJobForm() {
                         <button
                           type="button"
                           onClick={() => setShowCreateForm(false)}
-                          className="text-xs text-muted-foreground hover:text-foreground"
+                          className="-my-2 py-2 text-sm text-muted-foreground hover:text-foreground lg:my-0 lg:py-0 lg:text-xs"
                         >
                           Cancel
                         </button>
@@ -470,6 +532,8 @@ export function CreateJobForm() {
                           onChange={(e) => setPhoneQuery(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
                           placeholder="Phone number"
+                          inputMode="tel"
+                          className={PICKER_INPUT}
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -482,6 +546,7 @@ export function CreateJobForm() {
                           onChange={(e) => setNewCustomerName(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
                           placeholder="Customer name"
+                          className={PICKER_INPUT}
                         />
                       </div>
                     </div>
@@ -497,14 +562,14 @@ export function CreateJobForm() {
 
                 {/* Selected vehicle chip */}
                 {(vehicleId || newVehiclePlate) ? (
-                  <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+                  <div className={PICKER_CHIP}>
                     <div className="flex-1 min-w-0">
                       {vehicleId ? (
-                        <p className="text-sm font-medium truncate">
+                        <p className={cn(PICKER_PRIMARY_TEXT, "truncate")}>
                           {allVehicles.find((v) => v.id === vehicleId)?.plate_number ?? "Vehicle"}
                         </p>
                       ) : (
-                        <p className="text-sm font-medium truncate">
+                        <p className={cn(PICKER_PRIMARY_TEXT, "truncate")}>
                           {newVehiclePlate}{" "}
                           <span className="text-xs font-normal text-muted-foreground">(new)</span>
                         </p>
@@ -513,9 +578,10 @@ export function CreateJobForm() {
                     <button
                       type="button"
                       onClick={() => { setVehicleId(""); setNewVehiclePlate(""); setPlateQuery(""); }}
-                      className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                      aria-label="Clear vehicle"
+                      className={PICKER_CLEAR}
                     >
-                      <XIcon className="size-4" />
+                      <XIcon className="size-5 lg:size-4" />
                     </button>
                   </div>
                 ) : (
@@ -524,6 +590,8 @@ export function CreateJobForm() {
                     <div className="relative">
                       <Input
                         placeholder="Type plate number..."
+                        autoCapitalize="characters"
+                        className={PICKER_INPUT}
                         value={plateQuery}
                         onChange={(e) => setPlateQuery(e.target.value.toUpperCase())}
                         onKeyDown={(e) => {
@@ -555,11 +623,11 @@ export function CreateJobForm() {
                                 <button
                                   type="button"
                                   onClick={() => { setVehicleId(vehicle.id); setPlateQuery(""); }}
-                                  className="flex w-full flex-col px-3 py-2 text-left hover:bg-accent transition-colors"
+                                  className={PICKER_OPTION}
                                 >
-                                  <span className="text-sm font-medium">{vehicle.plate_number}</span>
+                                  <span className={PICKER_PRIMARY_TEXT}>{vehicle.plate_number}</span>
                                   {(vehicle.make || vehicle.model) && (
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className={PICKER_SECONDARY_TEXT}>
                                       {[vehicle.make, vehicle.model, vehicle.color].filter(Boolean).join(" · ")}
                                     </span>
                                   )}
@@ -568,9 +636,9 @@ export function CreateJobForm() {
                             ))}
                           </ul>
                         ) : (
-                          <div className="flex items-center justify-between px-3 py-2">
-                            <span className="text-sm text-muted-foreground">No match — press Enter to use this plate</span>
-                          </div>
+                          <p className="px-4 py-3 text-base text-muted-foreground lg:px-3 lg:py-2 lg:text-sm">
+                            No match — <span className="font-medium text-foreground">{plateQuery.trim()}</span> will be added as a new vehicle
+                          </p>
                         )}
                       </div>
                     )}
@@ -594,8 +662,13 @@ export function CreateJobForm() {
                   {serviceItems.map((item) => {
                     const service = servicesAll.find((s) => s.id === item.serviceId);
                     const price = service?.prices.find((p) => p.id === item.selectedPriceId);
+                    const unitPrice = price ? effectiveUnitPrice(item, price.price) : 0;
+                    const isCustom =
+                      price !== undefined &&
+                      item.customUnitPrice !== undefined &&
+                      item.customUnitPrice !== Number(price.price);
                     const priceLabel = price
-                      ? `KES ${(Number(price.price) * item.quantity).toLocaleString()}`
+                      ? `KES ${(unitPrice * item.quantity).toLocaleString()}`
                       : "—";
                     const sizeUnitLabel =
                       service?.unit === "by_size" && service.size_unit
@@ -608,34 +681,44 @@ export function CreateJobForm() {
                     const area = Number(item.quantity.toFixed(2));
 
                     return (
-                      <div key={item.serviceId} className="space-y-2 rounded-md border bg-muted/30 px-3 py-2">
+                      <div key={item.serviceId} className="space-y-3 rounded-lg border bg-muted/30 p-4">
                         <div className="flex items-start gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium leading-tight break-words">{item.serviceName}</p>
+                            <p className="text-base font-semibold leading-tight break-words">{item.serviceName}</p>
                             {price && sizeUnitLabel ? (
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-sm text-muted-foreground">
                                 {item.quantity > 0
-                                  ? `${item.length} × ${item.width} = ${area.toLocaleString()} ${sizeUnitLabel} × KES ${Number(price.price).toLocaleString()} = ${priceLabel}`
-                                  : `Enter size · KES ${Number(price.price).toLocaleString()} / ${sizeUnitLabel}`}
+                                  ? `${item.length} × ${item.width} = ${area.toLocaleString()} ${sizeUnitLabel} × KES ${unitPrice.toLocaleString()} = ${priceLabel}`
+                                  : `Enter size · KES ${unitPrice.toLocaleString()} / ${sizeUnitLabel}`}
                               </p>
                             ) : price ? (
-                              <p className="text-xs text-muted-foreground capitalize">
+                              <p className="text-sm text-muted-foreground capitalize">
                                 {price.size_label ?? price.vehicle_category ?? "Default"} · {priceLabel}
                               </p>
                             ) : (
-                              <p className="text-xs text-muted-foreground">{priceLabel}</p>
+                              <p className="text-sm text-muted-foreground">{priceLabel}</p>
+                            )}
+                            {isCustom && (
+                              <p className="text-sm text-amber-600 dark:text-amber-500">
+                                Custom price · was{" "}
+                                <span className="line-through">KES {Number(price.price).toLocaleString()}</span>
+                              </p>
                             )}
                           </div>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon-xs"
-                            onClick={() => removeItem(item.serviceId)}
+                            onClick={() => {
+                              removeItem(item.serviceId);
+                              clearPriceDraft(item.serviceId);
+                            }}
                             className="text-muted-foreground hover:text-destructive shrink-0"
                           >
                             <Trash2Icon />
                           </Button>
                         </div>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
                         {sizeUnitLabel ? (
                         <div className="flex items-center gap-1 shrink-0">
                           <Input
@@ -647,9 +730,9 @@ export function CreateJobForm() {
                             aria-label={`Length in ${dimensionUnitLabel}`}
                             value={item.length ? item.length : ""}
                             onChange={(e) => setDimension(item.serviceId, "length", e.target.value)}
-                            className="h-8 w-20 text-right text-sm tabular-nums"
+                            className="h-9 w-20 text-right text-sm tabular-nums"
                           />
-                          <span className="text-xs text-muted-foreground">×</span>
+                          <span className="text-sm text-muted-foreground">×</span>
                           <Input
                             type="number"
                             inputMode="decimal"
@@ -659,34 +742,76 @@ export function CreateJobForm() {
                             aria-label={`Width in ${dimensionUnitLabel}`}
                             value={item.width ? item.width : ""}
                             onChange={(e) => setDimension(item.serviceId, "width", e.target.value)}
-                            className="h-8 w-20 text-right text-sm tabular-nums"
+                            className="h-9 w-20 text-right text-sm tabular-nums"
                           />
-                          <span className="text-xs text-muted-foreground">{dimensionUnitLabel}</span>
+                          <span className="text-sm text-muted-foreground">{dimensionUnitLabel}</span>
                         </div>
                         ) : (
                         <div className="flex items-center gap-1 shrink-0">
                           <Button
                             type="button"
                             variant="outline"
-                            size="icon-xs"
+                            size="icon-sm"
                             onClick={() => updateQuantity(item.serviceId, -1)}
                             disabled={item.quantity <= 1}
                           >
                             <MinusIcon />
                           </Button>
-                          <span className="w-5 text-center text-sm font-medium tabular-nums">
+                          <span className="w-6 text-center text-base font-medium tabular-nums">
                             {item.quantity}
                           </span>
                           <Button
                             type="button"
                             variant="outline"
-                            size="icon-xs"
+                            size="icon-sm"
                             onClick={() => updateQuantity(item.serviceId, 1)}
                           >
                             <PlusIcon />
                           </Button>
                         </div>
                         )}
+                        {price && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm text-muted-foreground">KES</span>
+                            <Input
+                              type="number"
+                              inputMode="decimal"
+                              min="0"
+                              step="0.01"
+                              aria-label="Unit price"
+                              value={
+                                priceDrafts[item.serviceId] ??
+                                String(item.customUnitPrice ?? Number(price.price))
+                              }
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setPriceDrafts((prev) => ({ ...prev, [item.serviceId]: value }));
+                                setCustomUnitPrice(item.serviceId, value);
+                              }}
+                              onBlur={() => clearPriceDraft(item.serviceId)}
+                              className={cn(
+                                "h-9 w-28 text-right text-sm tabular-nums",
+                                isCustom && "border-amber-500"
+                              )}
+                            />
+                            <span className="text-sm text-muted-foreground">
+                              {sizeUnitLabel ? `/ ${sizeUnitLabel}` : "each"}
+                            </span>
+                            {isCustom && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Reset to standard price"
+                                onClick={() => resetCustomUnitPrice(item.serviceId)}
+                                className="text-muted-foreground"
+                              >
+                                <RotateCcwIcon />
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        </div>
                       </div>
                     );
                   })}

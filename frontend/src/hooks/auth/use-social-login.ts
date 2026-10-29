@@ -58,10 +58,13 @@ export const useSocialLogin = (options?: UseSocialLoginOptions) => {
       }
       localStorage.setItem("user", JSON.stringify(user));
 
-      // Redirect first; refetches run in the background
-      options?.onSuccess?.();
+      // Drop any data from a previous session, then refetch for the new user
+      queryClient.removeQueries({ queryKey: ["branches"] });
+      queryClient.removeQueries({ queryKey: ["business"] });
       queryClient.invalidateQueries({ queryKey: ["current-user"] });
-      queryClient.invalidateQueries({ queryKey: ["saved-jobs"] });
+
+      router.replace("/dashboard");
+      options?.onSuccess?.();
 
       return response;
     } catch (err) {

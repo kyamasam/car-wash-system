@@ -1,1 +1,1 @@
-from .send_welcome_email import handle_user_created  # noqa: F401
+from .account_confirmation import send_confirmation_on_signup  # noqa: F401

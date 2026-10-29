@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Currency } from "@/contexts/currency-context";
 import { type Business, useCurrentBusiness, useUpdateBusiness } from "@/hooks/commons/use-business";
+import { DEFAULT_JOB_CARD_FOOTER, DEFAULT_RECEIPT_FOOTER } from "@/lib/print/job-card";
 
 const CURRENCIES: { code: Currency; label: string }[] = [
   { code: "KES", label: "KES — Kenyan Shilling" },
@@ -72,6 +74,8 @@ export default function BusinessSettingsPage() {
     business.logo,
     business.currency,
     business.print_job_card_by_default,
+    business.receipt_footer,
+    business.job_card_footer,
   ].join("|");
   return <BusinessForm key={formKey} business={business} />;
 }
@@ -89,6 +93,8 @@ function BusinessForm({ business }: { business: Business }) {
   const [printJobCardByDefault, setPrintJobCardByDefault] = useState(
     business.print_job_card_by_default ?? true,
   );
+  const [receiptFooter, setReceiptFooter] = useState(business.receipt_footer ?? "");
+  const [jobCardFooter, setJobCardFooter] = useState(business.job_card_footer ?? "");
 
   const currencyLocked = !!business.currency;
 
@@ -129,6 +135,8 @@ function BusinessForm({ business }: { business: Business }) {
     if (logoFile) form.append("logo", logoFile);
     else if (logoRemoved) form.append("logo", "");
     form.append("print_job_card_by_default", String(printJobCardByDefault));
+    form.append("receipt_footer", receiptFooter.trim());
+    form.append("job_card_footer", jobCardFooter.trim());
     updateBusiness(form, { onSuccess: () => setShowCurrencyConfirm(false) });
   };
 
@@ -253,6 +261,36 @@ function BusinessForm({ business }: { business: Business }) {
               Pre-checks &quot;Print job card&quot; when creating a new job.
             </p>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="receipt-footer">Receipt footer</Label>
+          <Textarea
+            id="receipt-footer"
+            value={receiptFooter}
+            onChange={(e) => setReceiptFooter(e.target.value)}
+            placeholder={DEFAULT_RECEIPT_FOOTER}
+            maxLength={500}
+            rows={3}
+          />
+          <p className="text-xs text-muted-foreground">
+            Printed at the bottom of every receipt. Leave blank for the default message.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="job-card-footer">Job card footer</Label>
+          <Textarea
+            id="job-card-footer"
+            value={jobCardFooter}
+            onChange={(e) => setJobCardFooter(e.target.value)}
+            placeholder={DEFAULT_JOB_CARD_FOOTER}
+            maxLength={500}
+            rows={3}
+          />
+          <p className="text-xs text-muted-foreground">
+            Printed at the bottom of every job card. Leave blank for the default message.
+          </p>
         </div>
 
         <div className="pt-2">

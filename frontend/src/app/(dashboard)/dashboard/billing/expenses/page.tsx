@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { PaymentMethod } from "@/types/billing/payment";
+import { PageHeader } from "@/components/layout/page-header";
 
 const METHOD_LABEL: Record<PaymentMethod, string> = {
   cash: "Cash",
@@ -46,20 +47,11 @@ export default function ExpensesPage() {
   const branchName = (id: string) => branches.find((b) => b.id === id)?.name ?? "—";
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Expenses</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Track money spent running the business.
-          </p>
-        </div>
-        <Button onClick={() => setModalOpen(true)}>
-          <PlusIcon className="size-4" />
-          Record Expense
-        </Button>
-      </div>
+    <div className="flex flex-col gap-3 md:gap-6 md:p-6">
+      <PageHeader
+        title="Expenses"
+        primaryAction={{ label: "Record Expense", icon: PlusIcon, onClick: () => setModalOpen(true) }}
+      />
 
       {/* Summary strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">

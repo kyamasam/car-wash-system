@@ -9,14 +9,14 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useCurrentBusiness } from "@/hooks/commons/use-business";
 import { cn } from "@/lib/utils";
 import { Bell, Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { BranchSwitcher } from "./branch-switcher";
+import { UserMenu } from "./user-menu";
 
 interface DashboardTopBarProps {
   onMenuClick: () => void;
@@ -36,7 +36,6 @@ const SEGMENT_MAP: Record<string, string> = {
 export function DashboardTopBar({ onMenuClick, isMobile, isSidebarOpen }: DashboardTopBarProps) {
   const pathname = usePathname();
   const { data: business } = useCurrentBusiness();
-  const [showSearch, setShowSearch] = useState(false);
 
   const breadcrumbs = useMemo(() => {
     const segments = pathname.split("/").filter(Boolean);
@@ -49,16 +48,33 @@ export function DashboardTopBar({ onMenuClick, isMobile, isSidebarOpen }: Dashbo
     });
   }, [pathname]);
 
-  const pageTitle = breadcrumbs[breadcrumbs.length - 1]?.label || "Dashboard";
-
   return (
     <header
       className={cn(
-        "relative h-12 flex items-center justify-between md:px-6 px-0 shrink-0 w-full rounded-xl border border-white/30 border-b border-b-white/40 bg-white/15",
+        "relative h-14 md:h-12 flex items-center justify-between gap-2 md:px-6 px-2 shrink-0 w-full bg-white/15",
+        // Mobile: full-bleed with a bottom divider; desktop: floating rounded card
+        "border-b border-b-white/20 md:rounded-xl md:border md:border-white/30 md:border-b-white/40",
       )}
     >
-      {/* Left */}
-      <div className="flex items-center gap-3 min-w-0">
+      {/* Mobile: hamburger · branch · avatar (Material top app bar) */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onMenuClick}
+        className="md:hidden shrink-0"
+        aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+      <div className="md:hidden flex-1 min-w-0 flex justify-center">
+        <BranchSwitcher variant="pill" />
+      </div>
+      <div className="md:hidden shrink-0">
+        <UserMenu compact />
+      </div>
+
+      {/* Desktop left */}
+      <div className="hidden md:flex items-center gap-3 min-w-0">
         <Button
           variant="ghost"
           size="icon"
@@ -97,15 +113,15 @@ export function DashboardTopBar({ onMenuClick, isMobile, isSidebarOpen }: Dashbo
                   </span>
                 )}
               </div>
-              <span className="hidden sm:block text-sm font-semibold truncate max-w-40">
+              <span className="text-sm font-semibold truncate max-w-40">
                 {business.name}
               </span>
             </Link>
-            <div className="hidden sm:block h-5 w-px bg-border shrink-0" />
+            <div className="h-5 w-px bg-border shrink-0" />
           </>
         )}
 
-        <Breadcrumb className="hidden sm:block">
+        <Breadcrumb>
           <BreadcrumbList>
             {breadcrumbs.map((crumb) => (
               <div key={crumb.path} className="flex items-center gap-2">
@@ -123,16 +139,14 @@ export function DashboardTopBar({ onMenuClick, isMobile, isSidebarOpen }: Dashbo
             ))}
           </BreadcrumbList>
         </Breadcrumb>
-
-        <h1 className="text-sm font-semibold md:hidden truncate">{pageTitle}</h1>
       </div>
 
-      {/* Right */}
-      <div className="flex items-center gap-2 shrink-0 ml-4">
+      {/* Desktop right */}
+      <div className="hidden md:flex items-center gap-2 shrink-0 ml-4">
         <BranchSwitcher />
         <div
           className={cn(
-            "hidden md:flex items-center gap-2 w-48",
+            "flex items-center gap-2 w-48",
             "bg-background border border-border rounded-[9px]",
             "px-3 py-1.75 text-[13px] text-muted-foreground cursor-text",
           )}
@@ -140,15 +154,6 @@ export function DashboardTopBar({ onMenuClick, isMobile, isSidebarOpen }: Dashbo
           <Search size={14} className="shrink-0" />
           <span>Search...</span>
         </div>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={() => setShowSearch((s) => !s)}
-        >
-          <Search className="h-5 w-5" />
-        </Button>
 
         <div
           className={cn(
@@ -161,26 +166,6 @@ export function DashboardTopBar({ onMenuClick, isMobile, isSidebarOpen }: Dashbo
           <span className="absolute top-1.75 right-1.75 w-1.75 h-1.75 rounded-full bg-destructive border-[1.5px] border-card" />
         </div>
       </div>
-
-      {/* Mobile search dropdown */}
-      {showSearch && isMobile && (
-        <div
-          className={cn(
-            "absolute top-17 left-0 right-0 p-4 z-20",
-            "bg-background border-b border-border shadow-md",
-          )}
-        >
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              autoFocus
-              placeholder="Search..."
-              className="pl-10"
-              onBlur={() => setShowSearch(false)}
-            />
-          </div>
-        </div>
-      )}
     </header>
   );
 }
