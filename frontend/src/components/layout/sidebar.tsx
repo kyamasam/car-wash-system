@@ -8,6 +8,7 @@ import { SidebarBrand } from "./sidebar-brand";
 import { SidebarNav } from "./sidebar-nav";
 import { UserMenu } from "./user-menu";
 import { SidebarToggle } from "./sidebar-toggle";
+import { ModeToggle } from "@/components/theme/mode-toggle";
 
 export interface SidebarProps {
   isOpen: boolean;
@@ -40,42 +41,48 @@ export function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
           aria-hidden
           onClick={() => setIsOpen(false)}
           className={cn(
-            "fixed inset-0 z-40",
-            "bg-[var(--foreground)]/40 backdrop-blur-[2px]",
+            // M3 scrim
+            "fixed inset-0 z-40 bg-black/30",
             "transition-opacity",
           )}
         />
       )}
 
-      {/* Sidebar panel */}
+      {/* Sidebar panel — M3 navigation drawer (surface container low) */}
       <aside
         className={cn(
-          "border border-border z-50 h-full flex flex-col shrink-0",
-          // Colours from your globals
-          "bg-background md:rounded-lg",
-          "transition-all duration-300 ",
+          "z-50 h-full flex flex-col shrink-0 bg-sidebar",
+          "transition-all duration-300",
 
           // Width & slide behaviour
           isMobile
             ? [
-                "fixed inset-y-0 left-0 w-[240px] rounded-none shadow-xl",
+                // Modal drawer: rounded end corners, no start border
+                "fixed inset-y-0 left-0 w-[min(320px,85vw)] rounded-r-2xl shadow-xl",
+                "border-r border-sidebar-border overflow-hidden",
                 isOpen ? "translate-x-0" : "-translate-x-full",
               ]
-            : isOpen
-              ? "w-[240px]"
-              : "w-[72px]",
+            : [
+                "border border-sidebar-border md:rounded-lg",
+                isOpen ? "w-[240px]" : "w-[72px]",
+              ],
         )}
       >
-        {/* <SidebarBrand isOpen={isOpen} /> */}
+        <SidebarBrand isOpen={isOpen || isMobile} />
 
-        <SidebarNav isOpen={isOpen} />
+        <SidebarNav isOpen={isOpen || isMobile} />
 
         {/* Collapse toggle — desktop only */}
         {!isMobile && (
           <SidebarToggle isOpen={isOpen} onClick={() => setIsOpen(!isOpen)} />
         )}
-        
-        <UserMenu isOpen={isOpen} dropdownSide="top" />
+
+        <div className="border-t border-border p-1 flex items-center gap-1">
+          <div className="flex-1 min-w-0">
+            <UserMenu isOpen={isOpen} dropdownSide="top" />
+          </div>
+          {isMobile && <ModeToggle />}
+        </div>
       </aside>
     </>
   );

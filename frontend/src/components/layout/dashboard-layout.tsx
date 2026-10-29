@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 import { DashboardTopBar } from "./dashboard-top-bar";
+import { MobileBottomNav } from "./mobile-bottom-nav";
 import { Sidebar } from "./sidebar";
 import { TopNavigation } from "./top-navigation";
 
@@ -84,9 +85,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [toggle]);
 
   return (
-    <div className="h-screen bg-background text-foreground flex flex-col">
-      <TopNavigation />
-      <div className="flex-1 p-2 flex gap-2 overflow-hidden">
+    <div className="h-dvh bg-background text-foreground flex flex-col">
+      {/* Mobile uses DashboardTopBar as its only bar */}
+      <div className="hidden md:block">
+        <TopNavigation />
+      </div>
+      <div className="flex-1 p-0 md:p-2 flex gap-2 overflow-hidden">
         <Sidebar
           isOpen={isSidebarOpen}
           setIsOpen={setOpen}
@@ -106,9 +110,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             />
           </div>
 
-          <main className="flex-1 px-2 py-2 overflow-y-auto">
+          <main className="flex-1 p-4 md:p-2 overflow-y-auto">
             {children}
           </main>
+
+          {isMobile && (
+            <MobileBottomNav onMoreClick={toggle} isMoreActive={isSidebarOpen} />
+          )}
         </div>
       </div>
     </div>
