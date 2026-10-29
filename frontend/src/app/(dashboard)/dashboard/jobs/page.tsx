@@ -10,6 +10,8 @@ import {
   ListIcon,
   CalendarIcon,
   EyeIcon,
+  SlidersHorizontalIcon,
+  ChevronDownIcon,
 } from "lucide-react";
 
 import { useJobsStore } from "@/stores/jobs-store";
@@ -75,6 +77,7 @@ export default function JobsPage() {
   const [customTo, setCustomTo] = React.useState("");
   const [fromOpen, setFromOpen] = React.useState(false);
   const [toOpen, setToOpen] = React.useState(false);
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
 
   // Print a job card queued by the create-job form once this page has painted
   React.useEffect(() => {
@@ -99,6 +102,14 @@ export default function JobsPage() {
     search ||
     datePreset
   );
+
+  const advancedFilterCount = [
+    status,
+    paymentStatus,
+    collectionMethod,
+    search,
+    datePreset,
+  ].filter(Boolean).length;
 
   function clearFilters() {
     setStatus("");
@@ -132,6 +143,33 @@ export default function JobsPage() {
   const totalCount = jobsList?.count ?? 0;
   const pageSize = 10;
   const totalPages = Math.ceil(totalCount / pageSize);
+
+  const viewToggle = (
+    <div className="flex items-center rounded-md border border-border overflow-hidden">
+      <button
+        className={`px-2.5 py-1.5 transition-colors ${
+          viewMode === "cards"
+            ? "bg-primary text-primary-foreground"
+            : "hover:bg-muted"
+        }`}
+        onClick={() => setViewMode("cards")}
+        title="Card view"
+      >
+        <LayoutGridIcon className="size-4" />
+      </button>
+      <button
+        className={`px-2.5 py-1.5 transition-colors ${
+          viewMode === "table"
+            ? "bg-primary text-primary-foreground"
+            : "hover:bg-muted"
+        }`}
+        onClick={() => setViewMode("table")}
+        title="Table view"
+      >
+        <ListIcon className="size-4" />
+      </button>
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
@@ -172,11 +210,38 @@ export default function JobsPage() {
             {opt.label}
           </button>
         ))}
+
+        {/* Mobile: filters toggle + view toggle */}
+        <div className="ml-auto flex items-center gap-2 sm:hidden">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-1.5"
+            onClick={() => setFiltersOpen((o) => !o)}
+            aria-expanded={filtersOpen}
+            aria-controls="job-filters"
+          >
+            <SlidersHorizontalIcon className="size-4" />
+            Filters
+            {advancedFilterCount > 0 && (
+              <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-4 text-primary-foreground">
+                {advancedFilterCount}
+              </span>
+            )}
+            <ChevronDownIcon
+              className={`size-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`}
+            />
+          </Button>
+          {viewToggle}
+        </div>
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
+      <div
+        id="job-filters"
+        className={`${filtersOpen ? "flex" : "hidden"} sm:flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2`}
+      >
+        <div className="relative w-full sm:w-auto">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             className="pl-9 h-9 w-full sm:w-52 text-sm"
@@ -320,31 +385,8 @@ export default function JobsPage() {
           </Button>
         )}
 
-        {/* View toggle */}
-        <div className="ml-auto flex items-center rounded-md border border-border overflow-hidden">
-          <button
-            className={`px-2.5 py-1.5 transition-colors ${
-              viewMode === "cards"
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-muted"
-            }`}
-            onClick={() => setViewMode("cards")}
-            title="Card view"
-          >
-            <LayoutGridIcon className="size-4" />
-          </button>
-          <button
-            className={`px-2.5 py-1.5 transition-colors ${
-              viewMode === "table"
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-muted"
-            }`}
-            onClick={() => setViewMode("table")}
-            title="Table view"
-          >
-            <ListIcon className="size-4" />
-          </button>
-        </div>
+        {/* View toggle (desktop; on mobile it sits beside the Filters button) */}
+        <div className="ml-auto hidden sm:block">{viewToggle}</div>
       </div>
 
       {/* Content */}
