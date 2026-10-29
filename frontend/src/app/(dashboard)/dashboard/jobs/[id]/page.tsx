@@ -447,6 +447,12 @@ export default function JobDetailPage() {
         )}
       </div>
 
+      {/* Bottom print actions */}
+      <div className="flex items-center justify-end gap-2 flex-wrap">
+        <PrintJobCardButton job={job} />
+        <PrintReceiptButton job={job} />
+      </div>
+
       <PayJobModal
         job={job as unknown as Job}
         open={payOpen}
