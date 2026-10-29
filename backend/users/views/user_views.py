@@ -19,7 +19,7 @@ from users.serializers import (
     SendPasswordResetCodeSerializer,
     ResetPasswordSerializer,
 )
-from drf_spectacular.utils import extend_schema, OpenApiExample
+from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
 
@@ -66,8 +66,81 @@ class UserViewSet(BranchScopedMixin, viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Confirm user account",
+        description=(
+            "Verifies the account using the emailed OTP code. Optionally sets a password. "
+            "If the user has a usable password afterwards, JWT tokens and the user are returned; "
+            "otherwise only a `detail` message is returned."
+        ),
         request=ConfirmAccountSerializer,
-        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        responses={
+            200: inline_serializer(
+                name="ConfirmAccountResponse",
+                fields={
+                    "access": serializers.CharField(required=False),
+                    "refresh": serializers.CharField(required=False),
+                    "user": inline_serializer(
+                        name="ConfirmAccountUser",
+                        required=False,
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "email": serializers.EmailField(),
+                            "first_name": serializers.CharField(),
+                            "last_name": serializers.CharField(),
+                            "username": serializers.CharField(),
+                            "role": serializers.CharField(),
+                        },
+                    ),
+                    "detail": serializers.CharField(required=False),
+                },
+            ),
+            400: inline_serializer(
+                name="ConfirmAccountError",
+                fields={
+                    "non_field_errors": serializers.ListField(child=serializers.CharField(), required=False),
+                    "email": serializers.ListField(child=serializers.CharField(), required=False),
+                    "otp_code": serializers.ListField(child=serializers.CharField(), required=False),
+                    "password": serializers.ListField(child=serializers.CharField(), required=False),
+                    "confirm_password": serializers.ListField(child=serializers.CharField(), required=False),
+                },
+            ),
+        },
+        examples=[
+            OpenApiExample(
+                "Confirmed with tokens",
+                response_only=True,
+                status_codes=["200"],
+                value={
+                    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "user": {
+                        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "email": "user@example.com",
+                        "first_name": "Jane",
+                        "last_name": "Doe",
+                        "username": "janedoe",
+                        "role": "owner",
+                    },
+                },
+            ),
+            OpenApiExample(
+                "Confirmed without password",
+                response_only=True,
+                status_codes=["200"],
+                value={"detail": "Account confirmed successfully."},
+            ),
+            OpenApiExample(
+                "Invalid OTP",
+                response_only=True,
+                status_codes=["400"],
+                value={"non_field_errors": ["Invalid OTP code or email address."]},
+            ),
+            OpenApiExample(
+                "Passwords do not match",
+                response_only=True,
+                status_codes=["400"],
+                value={"non_field_errors": ["Passwords do not match."]},
+            ),
+        ],
     )
     @action(detail=False, methods=["post"], url_path="confirm-account",
             permission_classes=[permissions.AllowAny], serializer_class=ConfirmAccountSerializer)

@@ -86,7 +86,7 @@ export const useLogin = (onSuccess?: () => void) => {
       queryClient.removeQueries({ queryKey: ["branches"] });
       queryClient.removeQueries({ queryKey: ["business"] });
       queryClient.invalidateQueries({ queryKey: ["current-user"] });
-
+    
       router.replace("/dashboard");
       onSuccess?.();
       return response;

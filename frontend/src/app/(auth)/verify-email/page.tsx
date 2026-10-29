@@ -118,7 +118,7 @@ function VerifyEmailForm() {
         if (response.refresh) localStorage.setItem("refreshToken", response.refresh);
         if (response.user) localStorage.setItem("user", JSON.stringify(response.user));
         setPageState("success");
-        setTimeout(() => router.push(consumeRedirectUrl() ?? "/"), 1500);
+        setTimeout(() => router.push(consumeRedirectUrl() ?? "/dashboard"), 1500);
       } else {
         setPageState("success");
         setTimeout(() => router.push(consumeRedirectUrl() ?? "/login?verified=true"), 2000);
