@@ -110,7 +110,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             />
           </div>
 
-          <main className="flex-1 p-4 md:p-2 overflow-y-auto">
+          <main className="flex-1 px-4 pt-3 pb-4 md:p-2 overflow-y-auto max-md:has-data-fab:pb-24">
             {children}
           </main>
 

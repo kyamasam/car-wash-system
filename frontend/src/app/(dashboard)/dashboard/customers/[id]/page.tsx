@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { UpdateCustomerPayload, Vehicle } from "@/types/customers/customer";
+import { PageHeader } from "@/components/layout/page-header";
 
 const VEHICLE_CATEGORY_LABELS: Record<string, string> = {
   saloon: "Saloon",
@@ -132,7 +133,7 @@ export default function CustomerDetailPage() {
 
   if (currentCustomerLoading) {
     return (
-      <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6 max-w-2xl">
+      <div className="flex flex-col gap-3 md:gap-6 md:p-6 max-w-2xl">
         <Skeleton className="h-8 w-48" />
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -162,32 +163,22 @@ export default function CustomerDetailPage() {
   const vehicles = vehiclesList?.results ?? [];
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6 max-w-2xl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/customers">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ArrowLeftIcon className="size-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {currentCustomer.name ?? currentCustomer.phone}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Customer profile</p>
-          </div>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-          onClick={() => setDeleteOpen(true)}
-        >
-          <Trash2Icon className="size-4" />
-          Delete
-        </Button>
-      </div>
+    <div className="flex flex-col gap-3 md:gap-6 md:p-6 max-w-2xl">
+      <PageHeader
+        back="/dashboard/customers"
+        title={currentCustomer.name ?? currentCustomer.phone}
+        actions={
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2Icon className="size-4" />
+            Delete
+          </Button>
+        }
+      />
 
       {/* Edit form */}
       <form onSubmit={handleSave} className="space-y-5">

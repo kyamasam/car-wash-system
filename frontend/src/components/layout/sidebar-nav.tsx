@@ -7,37 +7,45 @@ import { NAV_ITEMS, NavItem } from "@/lib/nav-items";
 
 interface SidebarNavProps {
   isOpen: boolean;
+  isMobile?: boolean;
 }
 
-export function SidebarNav({ isOpen }: SidebarNavProps) {
+export function SidebarNav({ isOpen, isMobile = false }: SidebarNavProps) {
   const pathname = usePathname();
 
   const mainItems = NAV_ITEMS.filter((i) => i.section === "main");
   const otherItems = NAV_ITEMS.filter((i) => i.section === "other");
 
   return (
-    <nav className="flex-1 overflow-y-auto pb-2 px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <SectionLabel label="Carwash Manager" isOpen={isOpen} />
+    <nav
+      className={cn(
+        "flex-1 overflow-y-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        isMobile ? "px-2" : "px-3",
+      )}
+    >
+      <SectionLabel label="Carwash Manager" isOpen={isOpen} isMobile={isMobile} />
 
       {mainItems.map((item) => (
         <NavLink
           key={item.href}
           item={item}
           isOpen={isOpen}
+          isMobile={isMobile}
           isActive={pathname === item.href}
         />
       ))}
 
       {/* Divider */}
-      <div className="h-px bg-sidebar-border mx-4 my-2" />
+      <div className={cn("h-px bg-sidebar-border my-2", isMobile ? "mx-3" : "mx-4")} />
 
-      <SectionLabel label="Other" isOpen={isOpen} />
+      <SectionLabel label="Other" isOpen={isOpen} isMobile={isMobile} />
 
       {otherItems.map((item) => (
         <NavLink
           key={item.href}
           item={item}
           isOpen={isOpen}
+          isMobile={isMobile}
           isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
         />
       ))}
@@ -46,7 +54,10 @@ export function SidebarNav({ isOpen }: SidebarNavProps) {
 }
 
 /* ─── Section Label (M3: on-surface-variant, title-small) ─── */
-function SectionLabel({ label, isOpen }: { label: string; isOpen: boolean }) {
+function SectionLabel({ label, isOpen, isMobile }: { label: string; isOpen: boolean; isMobile: boolean }) {
+  // Mobile drawer is a plain settings-style list — no section headers
+  if (isMobile) return null;
+
   return (
     <p
       className={cn(
@@ -61,16 +72,20 @@ function SectionLabel({ label, isOpen }: { label: string; isOpen: boolean }) {
   );
 }
 
-/* ─── Nav Link (M3 drawer item) ──────────────── */
+/* ─── Nav Link ───────────────────────────────── */
 function NavLink({
   item,
   isOpen,
+  isMobile,
   isActive,
 }: {
   item: NavItem;
   isOpen: boolean;
+  isMobile: boolean;
   isActive: boolean;
 }) {
+  if (isMobile) return <MobileNavLink item={item} isActive={isActive} />;
+
   const Icon = item.icon;
 
   return (
@@ -119,6 +134,44 @@ function NavLink({
         >
           {item.title}
         </span>
+      )}
+    </Link>
+  );
+}
+
+/* ─── Mobile Nav Link (settings-list row) ────── */
+function MobileNavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
+  const Icon = item.icon;
+
+  return (
+    <Link
+      href={item.href}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "flex items-center gap-8 min-h-14 py-2 px-4 rounded-xl",
+        "transition-colors duration-200",
+        isActive
+          ? "bg-(--primary-muted) text-(--primary-dark) font-medium"
+          : "text-foreground font-normal hover:bg-foreground/[0.08]",
+      )}
+    >
+      <Icon
+        size={22}
+        strokeWidth={1.75}
+        className={cn("shrink-0", !isActive && "text-muted-foreground")}
+      />
+
+      <span className="flex-1 min-w-0 flex flex-col">
+        <span className="text-base leading-snug truncate">{item.title}</span>
+        {item.description && (
+          <span className="text-sm font-normal text-muted-foreground leading-tight truncate">
+            {item.description}
+          </span>
+        )}
+      </span>
+
+      {item.badge != null && (
+        <span className="text-xs font-medium shrink-0">{item.badge}</span>
       )}
     </Link>
   );

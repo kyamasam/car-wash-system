@@ -122,7 +122,7 @@ export default function JobDetailPage() {
 
   if (jobDetailLoading && !jobDetail) {
     return (
-      <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6 max-w-5xl">
+      <div className="flex flex-col gap-3 md:gap-6 md:p-6 max-w-5xl">
         <Skeleton className="h-8 w-48" />
         <div className="grid gap-4 md:grid-cols-2">
           <Skeleton className="h-40 w-full" />
@@ -164,16 +164,16 @@ export default function JobDetailPage() {
   return (
     <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6 max-w-5xl">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
+      <div className="flex items-start justify-between gap-3 md:gap-4 flex-wrap">
+        <div className="flex items-center gap-2 md:gap-3">
           <Link href="/dashboard/jobs">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2 md:ml-0" aria-label="Back">
               <ArrowLeftIcon className="size-4" />
             </Button>
           </Link>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-semibold tracking-tight">{job.job_number}</h1>
+              <h1 className="text-lg leading-7 md:text-2xl font-semibold tracking-tight">{job.job_number}</h1>
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[job.status]}`}
               >

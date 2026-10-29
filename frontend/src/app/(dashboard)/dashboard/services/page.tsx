@@ -42,6 +42,7 @@ import { useCurrentUser } from "@/hooks/auth/use-current-user";
 import { useServicesStore } from "@/stores/services-store";
 import { SIZE_UNIT_LABELS } from "@/types/services/service";
 import type { Service, ServiceCategory, ServicePrice } from "@/types/services/service";
+import { PageHeader } from "@/components/layout/page-header";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = React.useState(value);
@@ -158,20 +159,11 @@ export default function ServicesPage() {
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage the services your car wash offers.
-          </p>
-        </div>
-        <Button onClick={openNewService}>
-          <PlusIcon />
-          New Service
-        </Button>
-      </div>
+    <div className="flex flex-col gap-3 md:gap-6 md:p-6">
+      <PageHeader
+        title="Services"
+        primaryAction={{ label: "New Service", icon: PlusIcon, onClick: openNewService }}
+      />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">

@@ -46,6 +46,7 @@ import type {
   PaymentStatus,
 } from "@/types/jobs/job";
 import type { ServiceCategory } from "@/types/services/service";
+import { PageHeader } from "@/components/layout/page-header";
 
 const PAYMENT_VARIANT: Record<
   PaymentStatus,
@@ -172,21 +173,11 @@ export default function JobsPage() {
   );
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Jobs</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Track and manage all car wash jobs.
-          </p>
-        </div>
-        <Link href="/dashboard/jobs/new">
-          <Button>
-            <PlusIcon />
-            New Job
-          </Button>
-        </Link>
-      </div>
+    <div className="flex flex-col gap-3 md:gap-6 md:p-6">
+      <PageHeader
+        title="Jobs"
+        primaryAction={{ label: "New Job", icon: PlusIcon, href: "/dashboard/jobs/new" }}
+      />
 
       {/* Job type pills */}
       <div className="flex flex-wrap items-center gap-2">
@@ -201,7 +192,7 @@ export default function JobsPage() {
             key={opt.value}
             type="button"
             onClick={() => setCategory(opt.value)}
-            className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+            className={`h-8 rounded-full border px-3 md:h-auto md:px-4 md:py-1.5 text-sm font-medium transition-colors ${
               category === opt.value
                 ? "bg-primary text-primary-foreground border-primary"
                 : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"

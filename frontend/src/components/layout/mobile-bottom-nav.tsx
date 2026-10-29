@@ -9,7 +9,7 @@ import { NAV_ITEMS, NavItem } from "@/lib/nav-items";
 const BAR_HREFS = [
   "/dashboard",
   "/dashboard/jobs",
-  "/dashboard/customers",
+  "/dashboard/billing/expenses",
   "/dashboard/billing",
 ];
 

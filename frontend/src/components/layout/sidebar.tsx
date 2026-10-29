@@ -70,7 +70,7 @@ export function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
       >
         <SidebarBrand isOpen={isOpen || isMobile} />
 
-        <SidebarNav isOpen={isOpen || isMobile} />
+        <SidebarNav isOpen={isOpen || isMobile} isMobile={isMobile} />
 
         {/* Collapse toggle — desktop only */}
         {!isMobile && (
