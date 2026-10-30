@@ -20,7 +20,7 @@ from billing.constants import CommissionEntryStatus
     create=extend_schema(tags=["billing"]), update=extend_schema(tags=["billing"]),
     partial_update=extend_schema(tags=["billing"]), destroy=extend_schema(tags=["billing"]))
 class PaymentViewSet(BranchScopedMixin, ModelViewSet):
-    queryset = Payment.objects.select_related("job", "branch").all()
+    queryset = Payment.objects.filter(job__deleted_at__isnull=True).select_related("job", "branch")
     serializer_class = PaymentSerializer
 
     def perform_create(self, serializer):

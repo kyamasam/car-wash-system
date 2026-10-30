@@ -21,9 +21,8 @@ import { useCurrentUser } from "@/hooks/auth/use-current-user";
 import type {
   ReportFilters,
   DatePreset,
-  ReportGranularity,
 } from "@/types/reports/filters";
-import { resolvePreset } from "@/types/reports/filters";
+import { allowedGranularities, resolvePreset } from "@/types/reports/filters";
 
 const PRESETS: { label: string; value: DatePreset }[] = [
   { label: "Today", value: "today" },
@@ -58,24 +57,32 @@ export function ReportsFilterBar({ value, onChange, showGranularity = false }: P
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
 
+  const granularities = allowedGranularities(value.startDate, value.endDate);
+
+  // Fall back to "day" when the range is too short for the current granularity.
+  function setRange(next: ReportFilters) {
+    const allowed = allowedGranularities(next.startDate, next.endDate);
+    onChange(allowed.includes(next.granularity) ? next : { ...next, granularity: "day" });
+  }
+
   function setPreset(preset: DatePreset) {
     if (preset === "custom") {
       onChange({ ...value, preset: "custom" });
       return;
     }
     const { startDate, endDate } = resolvePreset(preset);
-    onChange({ ...value, preset, startDate, endDate });
+    setRange({ ...value, preset, startDate, endDate });
   }
 
   function setStartDate(d: Date | undefined) {
     if (!d) return;
-    onChange({ ...value, startDate: isoFromDate(d) });
+    setRange({ ...value, startDate: isoFromDate(d) });
     setStartOpen(false);
   }
 
   function setEndDate(d: Date | undefined) {
     if (!d) return;
-    onChange({ ...value, endDate: isoFromDate(d) });
+    setRange({ ...value, endDate: isoFromDate(d) });
     setEndOpen(false);
   }
 
@@ -83,14 +90,29 @@ export function ReportsFilterBar({ value, onChange, showGranularity = false }: P
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {/* Date preset buttons */}
-      <div className="flex items-center gap-1 bg-muted rounded-md p-1">
+      {/* Date preset dropdown — mobile */}
+      <Select value={value.preset} onValueChange={(v) => setPreset(v as DatePreset)}>
+        <SelectTrigger className="h-9 w-full justify-start [&>svg:last-child]:ml-auto bg-background border-foreground/15 text-sm sm:hidden">
+          <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+          <SelectValue className="flex-1 text-left" />
+        </SelectTrigger>
+        <SelectContent>
+          {PRESETS.map((p) => (
+            <SelectItem key={p.value} value={p.value}>
+              {p.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Date preset buttons — desktop */}
+      <div className="hidden sm:flex items-center gap-1">
         {PRESETS.map((p) => (
           <Button
             key={p.value}
             variant={value.preset === p.value ? "default" : "ghost"}
             size="sm"
-            className="h-7 px-3 text-xs"
+            className={`h-7 px-3 text-xs border ${value.preset === p.value ? "border-transparent" : "border-foreground/15"}`}
             onClick={() => setPreset(p.value)}
           >
             {p.label}
@@ -100,10 +122,10 @@ export function ReportsFilterBar({ value, onChange, showGranularity = false }: P
 
       {/* Custom date pickers */}
       {value.preset === "custom" && (
-        <div className="flex items-center gap-1">
+        <div className="flex w-full sm:w-auto items-center gap-1">
           <Popover open={startOpen} onOpenChange={setStartOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+              <Button variant="outline" size="sm" className="h-8 flex-1 sm:flex-none justify-start gap-1.5 text-xs">
                 <CalendarIcon className="w-3.5 h-3.5" />
                 {formatDateDisplay(value.startDate)}
               </Button>
@@ -123,7 +145,7 @@ export function ReportsFilterBar({ value, onChange, showGranularity = false }: P
 
           <Popover open={endOpen} onOpenChange={setEndOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+              <Button variant="outline" size="sm" className="h-8 flex-1 sm:flex-none justify-start gap-1.5 text-xs">
                 <CalendarIcon className="w-3.5 h-3.5" />
                 {formatDateDisplay(value.endDate)}
               </Button>
@@ -147,7 +169,7 @@ export function ReportsFilterBar({ value, onChange, showGranularity = false }: P
           value={value.branch ?? "all"}
           onValueChange={(v) => onChange({ ...value, branch: v === "all" ? undefined : v })}
         >
-          <SelectTrigger className="h-8 w-44 text-xs">
+          <SelectTrigger className="h-8 w-full sm:w-44 text-xs">
             <SelectValue placeholder="All branches" />
           </SelectTrigger>
           <SelectContent>
@@ -162,19 +184,26 @@ export function ReportsFilterBar({ value, onChange, showGranularity = false }: P
       )}
 
       {/* Granularity toggle */}
-      {showGranularity && (
-        <div className="flex items-center gap-1 bg-muted rounded-md p-1 ml-auto">
-          {(["day", "week", "month"] as ReportGranularity[]).map((g) => (
-            <Button
-              key={g}
-              variant={value.granularity === g ? "default" : "ghost"}
-              size="sm"
-              className="h-7 px-3 text-xs capitalize"
-              onClick={() => onChange({ ...value, granularity: g })}
-            >
-              {g}
-            </Button>
-          ))}
+      {showGranularity && granularities.length > 1 && (
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <span className="text-xs text-muted-foreground">Group by</span>
+          <div className="flex items-center gap-1">
+            {granularities.map((g) => (
+              <Button
+                key={g}
+                variant="ghost"
+                size="sm"
+                className={`h-7 px-2.5 text-xs capitalize border ${
+                  value.granularity === g
+                    ? "border-foreground/25 bg-foreground/5 text-foreground"
+                    : "border-transparent text-muted-foreground"
+                }`}
+                onClick={() => onChange({ ...value, granularity: g })}
+              >
+                {g}
+              </Button>
+            ))}
+          </div>
         </div>
       )}
     </div>

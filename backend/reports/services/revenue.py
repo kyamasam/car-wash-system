@@ -32,6 +32,7 @@ def _get_payment_revenue(user, start_date: date, end_date: date, granularity: st
     base_qs = Payment.objects.filter(
         branch__in=branch_ids,
         paid_at__date__range=(start_date, end_date),
+        job__deleted_at__isnull=True,
     )
 
     payments_qs = base_qs.filter(type=PaymentType.PAYMENT)

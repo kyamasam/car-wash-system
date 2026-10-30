@@ -30,6 +30,7 @@ export interface CurrentUser {
   email: string;
   profile: UserProfile;
   user_type: "CUSTOMER" | string;
+  role: "owner" | "manager" | "attendant" | "cashier";
   current_organization: CurrentOrgSummary | null;
   branch: string | null;
   business: string | null;

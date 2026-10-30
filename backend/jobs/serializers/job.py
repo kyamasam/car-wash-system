@@ -37,11 +37,19 @@ class JobSerializer(serializers.ModelSerializer):
     worker = WorkerSerializer(read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
     commission_entries = CommissionEntrySerializer(many=True, read_only=True)
+    deleted_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Job
         fields = "__all__"
-        read_only_fields = ("job_number",)
+        read_only_fields = ("job_number", "deleted_at", "deleted_by", "is_active")
+
+    def get_deleted_by_name(self, obj) -> str | None:
+        user = obj.deleted_by
+        if not user:
+            return None
+        parts = [p for p in (user.first_name, user.last_name) if p and p.strip() and p != "None"]
+        return " ".join(parts) or user.email or user.username
 
 
 # ---------------------------------------------------------------------------

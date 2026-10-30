@@ -26,6 +26,14 @@ export function useCurrentBusiness() {
   });
 }
 
+export function useCreateBusiness() {
+  return useApiMutation<Business, FormData>({
+    method: "POST",
+    url: "/commons/businesses/",
+    invalidateQueries: [["business", "current"]],
+  });
+}
+
 export function useUpdateBusiness() {
   return useApiMutation<Business, FormData>({
     method: "PATCH",

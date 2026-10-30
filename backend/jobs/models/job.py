@@ -46,6 +46,9 @@ class Job(UtilColumnsModel):
     collected_recorded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="jobs_collected"
     )
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="jobs_deleted"
+    )
     notes = models.TextField(blank=True, null=True)
 
     class Meta:
