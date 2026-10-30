@@ -121,6 +121,8 @@ export interface Job {
   notes: string | null;
   is_active: boolean;
   deleted_at: string | null;
+  deleted_by: string | null;
+  deleted_by_name: string | null;
   checked_in_at: string | null;
   started_at: string | null;
   completed_at: string | null;
@@ -148,6 +150,7 @@ export interface JobListParams {
   search?: string;
   date_from?: string;
   date_to?: string;
+  deleted?: boolean;
   page?: number;
 }
 

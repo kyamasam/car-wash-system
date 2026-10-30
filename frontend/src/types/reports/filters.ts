@@ -51,3 +51,15 @@ export const defaultFilters: ReportFilters = {
   ...resolvePreset("this_month"),
   granularity: "day",
 };
+
+/** Granularities that produce more than one bucket for the given range. */
+export function allowedGranularities(startDate: string, endDate: string): ReportGranularity[] {
+  const days =
+    (new Date(endDate + "T00:00:00").getTime() - new Date(startDate + "T00:00:00").getTime()) /
+      86_400_000 +
+    1;
+  const allowed: ReportGranularity[] = ["day"];
+  if (days > 7) allowed.push("week");
+  if (days > 31) allowed.push("month");
+  return allowed;
+}

@@ -6,7 +6,7 @@ from drf_spectacular.utils import extend_schema_view, extend_schema
 from commons.mixins import BranchScopedMixin
 from jobs.filters import JobFilter
 from jobs.models import Job, JobItem
-from jobs.permissions import CanDeleteJob
+from jobs.permissions import CanDeleteJob, can_manage_deleted_jobs
 from jobs.services.job_deletion import soft_delete_job
 from jobs.serializers import JobSerializer, JobItemSerializer, JobCreateSerializer
 
@@ -20,10 +20,22 @@ from jobs.serializers import JobSerializer, JobItemSerializer, JobCreateSerializ
     destroy=extend_schema(tags=["jobs"]),
 )
 class JobViewSet(BranchScopedMixin, ModelViewSet):
-    queryset = Job.objects.filter(deleted_at__isnull=True).select_related("branch", "customer", "vehicle", "worker").prefetch_related("items__service", "payments", "commission_entries").order_by('-created_at')
+    queryset = Job.objects.select_related("branch", "customer", "vehicle", "worker", "deleted_by").prefetch_related("items__service", "payments", "commission_entries").order_by('-created_at')
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = JobFilter
     search_fields = ["job_number", "customer__phone", "customer__name", "vehicle__plate_number"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        can_view_deleted = can_manage_deleted_jobs(self.request.user)
+        if self.action == "list":
+            if can_view_deleted and self.request.query_params.get("deleted") in ("true", "1"):
+                return qs.filter(deleted_at__isnull=False)
+            return qs.filter(deleted_at__isnull=True)
+        # Owners/managers can open a deleted job read-only; every write ignores deleted jobs.
+        if self.action == "retrieve" and can_view_deleted:
+            return qs
+        return qs.filter(deleted_at__isnull=True)
 
     def get_permissions(self):
         permissions = super().get_permissions()
@@ -37,7 +49,7 @@ class JobViewSet(BranchScopedMixin, ModelViewSet):
         return JobSerializer
 
     def perform_destroy(self, instance):
-        soft_delete_job(instance)
+        soft_delete_job(instance, user=self.request.user)
 
 
 @extend_schema_view(

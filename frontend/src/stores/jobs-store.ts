@@ -21,11 +21,30 @@ const buildQuery = (params: object): string => {
   return str ? `?${str}` : "";
 };
 
+// UI filter state of the jobs page, kept here so it survives navigating away and back.
+export interface JobsPageFilters {
+  page: number;
+  status: string;
+  paymentStatus: string;
+  collectionMethod: string;
+  category: string;
+  search: string;
+  showDeleted: boolean;
+  datePreset: string;
+  customFrom: string;
+  customTo: string;
+}
+
 interface JobsStore {
+  jobsPageFilters: JobsPageFilters | null;
+  setJobsPageFilters: (filters: JobsPageFilters) => void;
+
   jobsList: JobListResponse | null;
   jobsListLoading: boolean;
   jobsListError: string | null;
+  jobsListParams: JobListParams | undefined;
   fetchJobsList: (params?: JobListParams) => Promise<void>;
+  refreshJobsList: () => Promise<void>;
 
   jobDetail: JobDetail | null;
   jobDetailLoading: boolean;
@@ -42,13 +61,17 @@ interface JobsStore {
   deleteJob: (id: string) => Promise<boolean>;
 }
 
-export const useJobsStore = create<JobsStore>((set) => ({
+export const useJobsStore = create<JobsStore>((set, get) => ({
+  jobsPageFilters: null,
+  setJobsPageFilters: (filters) => set({ jobsPageFilters: filters }),
+
   jobsList: null,
   jobsListLoading: false,
   jobsListError: null,
+  jobsListParams: undefined,
 
   fetchJobsList: async (params) => {
-    set({ jobsListLoading: true, jobsListError: null });
+    set({ jobsListLoading: true, jobsListError: null, jobsListParams: params });
     try {
       const query = buildQuery(params ?? {});
       const { data } = await axiosInstance.get<JobListResponse>(`/jobs/${query}`);
@@ -58,6 +81,9 @@ export const useJobsStore = create<JobsStore>((set) => ({
       set({ jobsListError: message, jobsListLoading: false });
     }
   },
+
+  // Refetch the list with the same filters/page that produced it.
+  refreshJobsList: () => get().fetchJobsList(get().jobsListParams),
 
   jobDetail: null,
   jobDetailLoading: false,

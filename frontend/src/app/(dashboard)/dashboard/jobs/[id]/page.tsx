@@ -180,8 +180,9 @@ export default function JobDetailPage() {
 
   const job = jobDetail;
   const isUpdating = !!statusUpdating[job.id];
-  const transitions = TRANSITIONS[job.status] ?? [];
-  const canPay = job.payment_status !== "paid" && job.payment_status !== "refunded";
+  const isDeleted = !!job.deleted_at;
+  const transitions = isDeleted ? [] : TRANSITIONS[job.status] ?? [];
+  const canPay = !isDeleted && job.payment_status !== "paid" && job.payment_status !== "refunded";
   const balance = (parseFloat(job.total_amount) - parseFloat(job.amount_paid)).toFixed(2);
 
   const vehicleDesc = job.vehicle
@@ -213,6 +214,11 @@ export default function JobDetailPage() {
               <Badge variant="secondary" className="text-xs">
                 {COLLECTION_LABEL[job.collection_method] ?? job.collection_method}
               </Badge>
+              {isDeleted && (
+                <Badge variant="destructive" className="text-xs">
+                  Deleted
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
               {fmtDate(job.created_at)}
@@ -245,7 +251,7 @@ export default function JobDetailPage() {
                 {isUpdating ? <Loader2Icon className="size-4 animate-spin" /> : t.label}
               </Button>
             ))}
-            {canDelete && (
+            {canDelete && !isDeleted && (
               <Button
                 variant="outline"
                 size="sm"
@@ -258,6 +264,17 @@ export default function JobDetailPage() {
             )}
         </div>
       </div>
+
+      {isDeleted && (
+        <div className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm">
+          <p className="font-medium text-destructive">
+            Deleted on {fmt(job.deleted_at)} by {job.deleted_by_name ?? "Unknown"}
+          </p>
+          <p className="text-muted-foreground mt-0.5">
+            This job is excluded from reports and can no longer be edited.
+          </p>
+        </div>
+      )}
 
       {/* Info grid */}
       <div className="grid gap-4 md:grid-cols-2">
@@ -430,7 +447,7 @@ export default function JobDetailPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  {c.status === "pending" && (
+                  {c.status === "pending" && !isDeleted && (
                     <>
                       <input
                         type="date"
@@ -472,6 +489,9 @@ export default function JobDetailPage() {
             ...(job.cancelled_at
               ? [{ label: "Cancelled", value: job.cancelled_at }]
               : []),
+            ...(job.deleted_at
+              ? [{ label: "Deleted", value: job.deleted_at }]
+              : []),
           ].map(({ label, value }) => (
             <div key={label} className="flex justify-between gap-2">
               <span className="text-muted-foreground">{label}</span>
@@ -482,6 +502,11 @@ export default function JobDetailPage() {
         {job.cancel_reason && (
           <p className="text-sm text-muted-foreground border-t border-border pt-2">
             Cancel reason: {job.cancel_reason}
+          </p>
+        )}
+        {isDeleted && (
+          <p className="text-sm text-muted-foreground border-t border-border pt-2">
+            Deleted by: {job.deleted_by_name ?? "Unknown"}
           </p>
         )}
       </div>
