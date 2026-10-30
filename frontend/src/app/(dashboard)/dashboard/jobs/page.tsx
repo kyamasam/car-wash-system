@@ -47,6 +47,7 @@ import type {
 } from "@/types/jobs/job";
 import type { ServiceCategory } from "@/types/services/service";
 import { PageHeader } from "@/components/layout/page-header";
+import { useCurrentUser } from "@/hooks/auth/use-current-user";
 
 const PAYMENT_VARIANT: Record<
   PaymentStatus,
@@ -59,23 +60,32 @@ const PAYMENT_VARIANT: Record<
 };
 
 export default function JobsPage() {
-  const { jobsList, jobsListLoading, fetchJobsList } = useJobsStore();
-  const [page, setPage] = React.useState(1);
-  const [status, setStatus] = React.useState<JobStatus | "">("");
+  const { jobsList, jobsListLoading, fetchJobsList, setJobsPageFilters } = useJobsStore();
+  // Restore filters from the last visit so returning (e.g. after deleting a job) keeps them.
+  const [saved] = React.useState(() => useJobsStore.getState().jobsPageFilters);
+  const [page, setPage] = React.useState(saved?.page ?? 1);
+  const [status, setStatus] = React.useState<JobStatus | "">((saved?.status ?? "") as JobStatus | "");
   const [paymentStatus, setPaymentStatus] = React.useState<PaymentStatus | "">(
-    ""
+    (saved?.paymentStatus ?? "") as PaymentStatus | ""
   );
   const [collectionMethod, setCollectionMethod] = React.useState<
     CollectionMethod | ""
-  >("");
+  >((saved?.collectionMethod ?? "") as CollectionMethod | "");
   const [category, setCategory] = React.useState<
     Extract<ServiceCategory, "vehicle" | "carpet"> | ""
-  >("");
-  const [search, setSearch] = React.useState("");
+  >((saved?.category ?? "") as Extract<ServiceCategory, "vehicle" | "carpet"> | "");
+  const [search, setSearch] = React.useState(saved?.search ?? "");
+  const [showDeleted, setShowDeleted] = React.useState(saved?.showDeleted ?? false);
+  const { data: currentUser } = useCurrentUser();
+  const canViewDeleted =
+    !!currentUser &&
+    (currentUser.role === "owner" || currentUser.role === "manager" || String(currentUser.is_admin) === "true");
   const [viewMode, setViewMode] = React.useState<"cards" | "table">("cards");
-  const [datePreset, setDatePreset] = React.useState<"today" | "yesterday" | "custom" | "">("today");
-  const [customFrom, setCustomFrom] = React.useState("");
-  const [customTo, setCustomTo] = React.useState("");
+  const [datePreset, setDatePreset] = React.useState<"today" | "yesterday" | "custom" | "">(
+    (saved?.datePreset ?? "today") as "today" | "yesterday" | "custom" | ""
+  );
+  const [customFrom, setCustomFrom] = React.useState(saved?.customFrom ?? "");
+  const [customTo, setCustomTo] = React.useState(saved?.customTo ?? "");
   const [fromOpen, setFromOpen] = React.useState(false);
   const [toOpen, setToOpen] = React.useState(false);
   const [filtersOpen, setFiltersOpen] = React.useState(false);
@@ -101,7 +111,8 @@ export default function JobsPage() {
     collectionMethod ||
     category ||
     search ||
-    datePreset
+    datePreset ||
+    showDeleted
   );
 
   const advancedFilterCount = [
@@ -110,6 +121,7 @@ export default function JobsPage() {
     collectionMethod,
     search,
     datePreset,
+    showDeleted,
   ].filter(Boolean).length;
 
   function clearFilters() {
@@ -118,15 +130,27 @@ export default function JobsPage() {
     setCollectionMethod("");
     setCategory("");
     setSearch("");
+    setShowDeleted(false);
     setDatePreset("");
     setCustomFrom("");
     setCustomTo("");
     setPage(1);
   }
 
+  // Reset to page 1 only when a filter actually changes, not on mount (that would drop a restored page).
+  const filterKey = JSON.stringify([status, paymentStatus, collectionMethod, category, search, showDeleted, datePreset, customFrom, customTo]);
+  const prevFilterKey = React.useRef(filterKey);
   React.useEffect(() => {
+    if (prevFilterKey.current === filterKey) return;
+    prevFilterKey.current = filterKey;
     setPage(1);
-  }, [status, paymentStatus, collectionMethod, category, search, datePreset, customFrom, customTo]);
+  }, [filterKey]);
+
+  React.useEffect(() => {
+    setJobsPageFilters({
+      page, status, paymentStatus, collectionMethod, category, search, showDeleted, datePreset, customFrom, customTo,
+    });
+  }, [page, status, paymentStatus, collectionMethod, category, search, showDeleted, datePreset, customFrom, customTo]);
 
   React.useEffect(() => {
     fetchJobsList({
@@ -136,9 +160,10 @@ export default function JobsPage() {
       collection_method: collectionMethod || undefined,
       category: category || undefined,
       search: search || undefined,
+      deleted: showDeleted || undefined,
       ...getDateRange(),
     });
-  }, [page, status, paymentStatus, collectionMethod, category, search, datePreset, customFrom, customTo]);
+  }, [page, status, paymentStatus, collectionMethod, category, search, showDeleted, datePreset, customFrom, customTo]);
 
   const jobs = jobsList?.results ?? [];
   const totalCount = jobsList?.count ?? 0;
@@ -290,6 +315,21 @@ export default function JobsPage() {
             <SelectItem value="delivery">Delivery</SelectItem>
           </SelectContent>
         </Select>
+
+        {canViewDeleted && (
+          <Select
+            value={showDeleted ? "deleted" : "active"}
+            onValueChange={(v) => setShowDeleted(v === "deleted")}
+          >
+            <SelectTrigger className="h-9 w-full sm:w-36 text-xs">
+              <SelectValue placeholder="Active jobs" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active jobs</SelectItem>
+              <SelectItem value="deleted">Deleted jobs</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
 
         <Select
           value={datePreset}
@@ -478,6 +518,11 @@ export default function JobsPage() {
                     >
                       {STATUS_LABEL[job.status]}
                     </span>
+                    {job.deleted_at && (
+                      <Badge variant="destructive" className="text-xs ml-1">
+                        Deleted
+                      </Badge>
+                    )}
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     <Badge variant={PAYMENT_VARIANT[job.payment_status]} className="text-xs">

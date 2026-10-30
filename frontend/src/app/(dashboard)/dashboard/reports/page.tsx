@@ -15,6 +15,16 @@ import { PageHeader } from "@/components/layout/page-header";
 
 const GRANULARITY_TABS = new Set(["revenue", "profit", "expenses"]);
 
+const REPORT_TABS = [
+  { value: "revenue", label: "Revenue" },
+  { value: "profit", label: "Profit" },
+  { value: "jobs", label: "Jobs" },
+  { value: "workers", label: "Workers" },
+  { value: "services", label: "Services" },
+  { value: "expenses", label: "Expenses" },
+  { value: "commissions", label: "Commissions" },
+];
+
 export default function ReportsPage() {
   const [filters, setFilters] = useState<ReportFilters>(defaultFilters);
   const [activeTab, setActiveTab] = useState("revenue");
@@ -25,14 +35,12 @@ export default function ReportsPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex flex-col gap-3">
-          <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="revenue">Revenue</TabsTrigger>
-            <TabsTrigger value="profit">Profit</TabsTrigger>
-            <TabsTrigger value="jobs">Jobs</TabsTrigger>
-            <TabsTrigger value="workers">Workers</TabsTrigger>
-            <TabsTrigger value="services">Services</TabsTrigger>
-            <TabsTrigger value="expenses">Expenses</TabsTrigger>
-            <TabsTrigger value="commissions">Commissions</TabsTrigger>
+          <TabsList className="w-full sm:w-fit bg-transparent p-0 flex-wrap justify-start gap-1 group-data-[orientation=horizontal]/tabs:h-auto">
+            {REPORT_TABS.map((t) => (
+              <TabsTrigger key={t.value} value={t.value} className="flex-auto sm:flex-none h-8 data-[state=inactive]:border-foreground/15 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground dark:data-[state=active]:border-transparent">
+                {t.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           <ReportsFilterBar

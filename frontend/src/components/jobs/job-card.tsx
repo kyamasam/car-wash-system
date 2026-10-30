@@ -71,11 +71,12 @@ const TRANSITIONS: Partial<Record<JobStatus, StatusTransition[]>> = {
 };
 
 function JobCard({ job }: { job: Job }) {
-  const { updateJobStatus, statusUpdating, fetchJobsList } = useJobsStore();
+  const { updateJobStatus, statusUpdating, refreshJobsList } = useJobsStore();
   const isUpdating = !!statusUpdating[job.id];
-  const transitions = TRANSITIONS[job.status] ?? [];
+  const isDeleted = !!job.deleted_at;
+  const transitions = isDeleted ? [] : TRANSITIONS[job.status] ?? [];
   const [payOpen, setPayOpen] = React.useState(false);
-  const canPay = job.payment_status !== "paid" && job.payment_status !== "refunded";
+  const canPay = !isDeleted && job.payment_status !== "paid" && job.payment_status !== "refunded";
 
   const vehicleDesc = [job.vehicle?.color, job.vehicle?.make, job.vehicle?.model]
     .filter(Boolean)
@@ -137,6 +138,11 @@ function JobCard({ job }: { job: Job }) {
         <Badge variant={PAYMENT_VARIANT[job.payment_status]} className="text-xs">
           {PAYMENT_LABEL[job.payment_status]}
         </Badge>
+        {isDeleted && (
+          <Badge variant="destructive" className="text-xs">
+            Deleted
+          </Badge>
+        )}
         <span className="text-xs text-muted-foreground ml-auto">
           {job.total_amount}
         </span>
@@ -178,7 +184,7 @@ function JobCard({ job }: { job: Job }) {
         job={job}
         open={payOpen}
         onOpenChange={setPayOpen}
-        onSuccess={() => fetchJobsList()}
+        onSuccess={() => refreshJobsList()}
       />
     </div>
   );
