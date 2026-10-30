@@ -38,6 +38,8 @@ interface JobsStore {
 
   statusUpdating: Record<string, boolean>;
   updateJobStatus: (id: string, status: JobStatus) => Promise<void>;
+
+  deleteJob: (id: string) => Promise<boolean>;
 }
 
 export const useJobsStore = create<JobsStore>((set) => ({
@@ -108,6 +110,25 @@ export const useJobsStore = create<JobsStore>((set) => ({
       }));
     } catch {
       set((s) => ({ statusUpdating: { ...s.statusUpdating, [id]: false } }));
+    }
+  },
+
+  deleteJob: async (id) => {
+    try {
+      await axiosInstance.delete(`/jobs/${id}/`);
+      set((s) => ({
+        jobsList: s.jobsList
+          ? {
+              ...s.jobsList,
+              count: Math.max(0, s.jobsList.count - 1),
+              results: s.jobsList.results.filter((j) => j.id !== id),
+            }
+          : s.jobsList,
+        jobDetail: s.jobDetail?.id === id ? null : s.jobDetail,
+      }));
+      return true;
+    } catch {
+      return false;
     }
   },
 }));

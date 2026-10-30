@@ -5,16 +5,16 @@ from django.db.models import Sum, Q
 
 from billing.models import CommissionEntry
 from billing.constants import CommissionEntryStatus
-from .utils import resolve_branch_ids
+from .utils import resolve_branch_ids, exclude_deleted_job_commissions
 
 
 def get_commission_summary_report(user, start_date: date, end_date: date, branch_id=None) -> dict:
     branch_ids = resolve_branch_ids(user, branch_id)
 
-    qs = CommissionEntry.objects.filter(
+    qs = exclude_deleted_job_commissions(CommissionEntry.objects.filter(
         branch__in=branch_ids,
         earned_at__date__range=(start_date, end_date),
-    )
+    ))
 
     totals = qs.aggregate(
         total_pending=Sum("amount", filter=Q(status=CommissionEntryStatus.PENDING)),

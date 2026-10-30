@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowLeftIcon, Loader2Icon } from "lucide-react";
+import { ArrowLeftIcon, Loader2Icon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import * as React from "react";
 
 import {
@@ -12,9 +12,20 @@ import {
 } from "@/components/jobs/job-card";
 import { PayJobModal } from "@/components/jobs/pay-job-modal";
 import { PrintJobCardButton, PrintReceiptButton } from "@/components/jobs/print-job-card-button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCurrentUser } from "@/hooks/auth/use-current-user";
 import { useBillingStore } from "@/stores/billing-store";
 import { useJobsStore } from "@/stores/jobs-store";
 import type { Job, JobStatus, PaymentStatus } from "@/types/jobs/job";
@@ -97,9 +108,26 @@ function fmtDate(ts: string | null) {
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { jobDetail, jobDetailLoading, jobDetailError, fetchJobDetail, updateJobStatus, statusUpdating } =
+  const router = useRouter();
+  const { jobDetail, jobDetailLoading, jobDetailError, fetchJobDetail, updateJobStatus, statusUpdating, deleteJob } =
     useJobsStore();
   const { bulkMarkPaid } = useBillingStore();
+  const { data: currentUser } = useCurrentUser();
+  const canDelete =
+    !!currentUser &&
+    (currentUser.role === "owner" || currentUser.role === "manager" || String(currentUser.is_admin) === "true");
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  async function handleDelete() {
+    setIsDeleting(true);
+    try {
+      const ok = await deleteJob(id);
+      if (ok) router.push("/dashboard/jobs");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   const today = new Date().toISOString().slice(0, 10);
   const [payOpen, setPayOpen] = React.useState(false);
@@ -217,6 +245,17 @@ export default function JobDetailPage() {
                 {isUpdating ? <Loader2Icon className="size-4 animate-spin" /> : t.label}
               </Button>
             ))}
+            {canDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-destructive text-destructive hover:bg-destructive/10"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2Icon className="size-4" />
+                Delete
+              </Button>
+            )}
         </div>
       </div>
 
@@ -459,6 +498,29 @@ export default function JobDetailPage() {
         onOpenChange={setPayOpen}
         onSuccess={() => fetchJobDetail(id)}
       />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete job?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{job.job_number}</strong> will be removed from job lists and all reports, including its
+              payments. Pending commissions will be voided. Commissions already paid out are kept.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

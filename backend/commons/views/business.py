@@ -1,6 +1,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
+from django.db import transaction
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
@@ -10,6 +11,7 @@ from drf_spectacular.types import OpenApiTypes
 
 from commons.models import Business, Branch
 from commons.serializers import BusinessSerializer, BranchSerializer
+from users.constants import UserRole
 
 
 @extend_schema_view(
@@ -30,6 +32,16 @@ class BusinessViewSet(ModelViewSet):
         if not user.is_authenticated or user.is_superuser:
             return Business.objects.all()
         return Business.objects.filter(id=user.business_id)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        if user.business_id:
+            raise ValidationError("You are already linked to a business.")
+        with transaction.atomic():
+            business = serializer.save(primary_user=user)
+            user.business = business
+            user.role = UserRole.OWNER
+            user.save(update_fields=["business", "role"])
 
     @extend_schema(tags=["commons"], methods=["GET", "PATCH"])
     @action(detail=False, methods=["get", "patch"], url_path="current", url_name="current")
@@ -68,6 +80,12 @@ class BranchViewSet(ModelViewSet):
         if user.branch_id:
             return Branch.objects.select_related("business").filter(id=user.branch_id)
         return Branch.objects.select_related("business").filter(business=user.business_id)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        if not user.is_superuser and serializer.validated_data["business"].id != user.business_id:
+            raise PermissionDenied("You can only add branches to your own business.")
+        serializer.save()
 
     @extend_schema(
         tags=["commons"],

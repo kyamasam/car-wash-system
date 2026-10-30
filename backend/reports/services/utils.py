@@ -1,4 +1,15 @@
+from django.db.models import Q
+
+from billing.constants import CommissionEntryStatus
 from commons.models import Branch
+
+
+def exclude_deleted_job_commissions(qs):
+    """
+    Drop commissions tied to soft-deleted jobs, except ones already paid out
+    (that money has left the business, so it still counts).
+    """
+    return qs.exclude(Q(job__deleted_at__isnull=False) & ~Q(status=CommissionEntryStatus.PAID))
 
 
 def resolve_branch_ids(user, branch_id_param=None):

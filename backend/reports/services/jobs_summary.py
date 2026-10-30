@@ -24,6 +24,7 @@ def get_jobs_summary_report(user, start_date: date, end_date: date, branch_id=No
     qs = Job.objects.filter(
         branch__in=branch_ids,
         checked_in_at__date__range=(start_date, end_date),
+        deleted_at__isnull=True,
     )
 
     total_jobs = qs.count()

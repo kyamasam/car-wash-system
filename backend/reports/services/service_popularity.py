@@ -14,6 +14,7 @@ def get_service_popularity_report(user, start_date: date, end_date: date, branch
         JobItem.objects.filter(
             job__branch__in=branch_ids,
             job__checked_in_at__date__range=(start_date, end_date),
+            job__deleted_at__isnull=True,
         )
         .values("service__id", "service__name", "service__category")
         .annotate(

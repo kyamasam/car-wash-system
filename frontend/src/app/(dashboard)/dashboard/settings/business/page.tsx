@@ -29,22 +29,7 @@ import {
 import type { Currency } from "@/contexts/currency-context";
 import { type Business, useCurrentBusiness, useUpdateBusiness } from "@/hooks/commons/use-business";
 import { DEFAULT_JOB_CARD_FOOTER, DEFAULT_RECEIPT_FOOTER } from "@/lib/print/job-card";
-
-const CURRENCIES: { code: Currency; label: string }[] = [
-  { code: "KES", label: "KES — Kenyan Shilling" },
-  { code: "USD", label: "USD — US Dollar" },
-  { code: "EUR", label: "EUR — Euro" },
-];
-
-const MAX_LOGO_BYTES = 2 * 1024 * 1024;
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-}
+import { CURRENCIES, MAX_LOGO_BYTES, getInitials } from "@/lib/business";
 
 export default function BusinessSettingsPage() {
   const { data: business, isLoading } = useCurrentBusiness();

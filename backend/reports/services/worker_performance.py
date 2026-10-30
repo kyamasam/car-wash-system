@@ -7,7 +7,7 @@ from jobs.models import Job
 from jobs.constants import JobStatus
 from billing.models import CommissionEntry
 from billing.constants import CommissionEntryStatus
-from .utils import resolve_branch_ids
+from .utils import resolve_branch_ids, exclude_deleted_job_commissions
 
 
 _DONE_STATUSES = [JobStatus.COMPLETED, JobStatus.READY_FOR_COLLECTION, JobStatus.COLLECTED]
@@ -22,6 +22,7 @@ def get_worker_performance_report(
         branch__in=branch_ids,
         checked_in_at__date__range=(start_date, end_date),
         worker__isnull=False,
+        deleted_at__isnull=True,
     )
     if worker_id:
         job_qs = job_qs.filter(worker_id=worker_id)
@@ -43,10 +44,10 @@ def get_worker_performance_report(
     )
     job_map = {row["worker__id"]: row for row in job_rows}
 
-    commission_qs = CommissionEntry.objects.filter(
+    commission_qs = exclude_deleted_job_commissions(CommissionEntry.objects.filter(
         branch__in=branch_ids,
         earned_at__date__range=(start_date, end_date),
-    )
+    ))
     if worker_id:
         commission_qs = commission_qs.filter(worker_id=worker_id)
 

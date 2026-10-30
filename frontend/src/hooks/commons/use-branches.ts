@@ -1,4 +1,4 @@
-import { useApiQuery } from "@/hooks/use-api";
+import { useApiMutation, useApiQuery } from "@/hooks/use-api";
 
 export interface Branch {
   id: string;
@@ -16,5 +16,21 @@ export function useBranches(userId?: string) {
     select: (data) => data,
     staleTime: 1000 * 60 * 10,
     enabled: !!userId,
+  });
+}
+
+export interface CreateBranchPayload {
+  name: string;
+  code: string;
+  business: string;
+  location?: string;
+  phone?: string;
+}
+
+export function useCreateBranch() {
+  return useApiMutation<Branch, CreateBranchPayload>({
+    method: "POST",
+    url: "/commons/branches/",
+    invalidateQueries: ["branches"],
   });
 }

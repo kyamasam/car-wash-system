@@ -9,6 +9,11 @@ class PaymentSerializer(serializers.ModelSerializer):
         model = Payment
         fields = "__all__"
 
+    def validate_job(self, job):
+        if job.deleted_at is not None:
+            raise serializers.ValidationError("Cannot record a payment for a deleted job.")
+        return job
+
 
 class CommissionPayoutSerializer(serializers.ModelSerializer):
     class Meta:
