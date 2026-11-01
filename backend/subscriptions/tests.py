@@ -76,22 +76,31 @@ class GrantDaysTests(SubscriptionTestBase):
 
 
 class GuardTests(SubscriptionTestBase):
+    def create_customer(self):
+        return self.client.post("/api/customers/", {"name": "Jo", "phone": "+254700000001"})
+
     def create_branch(self):
         return self.client.post("/api/commons/branches/", {"business": self.business.id, "name": "A", "code": "A1"})
 
     def test_writes_allowed_when_active(self):
-        self.assertEqual(self.create_branch().status_code, 201)
+        self.assertEqual(self.create_customer().status_code, 201)
 
     def test_writes_blocked_when_expired(self):
         self.expire()
-        res = self.create_branch()
+        res = self.create_customer()
         self.assertEqual(res.status_code, 402)
         self.assertEqual(res.data["errors"][0]["code"], "subscription_expired")
         self.assertIn("expired on", res.data["errors"][0]["detail"])
 
     def test_reads_allowed_when_expired(self):
         self.expire()
-        self.assertEqual(self.client.get("/api/commons/branches/").status_code, 200)
+        self.assertEqual(self.client.get("/api/customers/").status_code, 200)
+
+    def test_commons_endpoints_exempt_when_expired(self):
+        self.expire()
+        self.assertEqual(self.create_branch().status_code, 201)
+        res = self.client.patch("/api/commons/businesses/current/", {"name": "Shine 2"})
+        self.assertEqual(res.status_code, 200)
 
     @mock.patch(f"{FASTDUKA}.initiate_stk_push", return_value=("key-1", {"idempotency_key": "key-1"}))
     def test_subscription_endpoints_exempt_when_expired(self, _):

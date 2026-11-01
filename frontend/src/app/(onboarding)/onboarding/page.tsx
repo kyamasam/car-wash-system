@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,7 +20,10 @@ export default function OnboardingPage() {
   const { data: branches, isPending: isBranchesPending } = useBranches(
     business ? user?.id : undefined,
   );
-  const alreadyOnboarded = !!business && !!branches?.length;
+  // While the branch step is saving several branches, the first save makes
+  // `branches` non-empty; hold off the redirect until the step finishes.
+  const [submitting, setSubmitting] = useState(false);
+  const alreadyOnboarded = !submitting && !!business && !!branches?.length;
 
   useEffect(() => {
     if (hasToken === false) router.replace("/login");
@@ -50,7 +53,7 @@ export default function OnboardingPage() {
               ))}
             </div>
           ) : business ? (
-            <CreateBranchStep business={business} />
+            <CreateBranchStep business={business} onSubmittingChange={setSubmitting} />
           ) : (
             <CreateBusinessStep />
           )}

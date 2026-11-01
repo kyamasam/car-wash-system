@@ -25,6 +25,8 @@ from users.constants import UserRole
 class BusinessViewSet(ModelViewSet):
     queryset = Business.objects.all()
     serializer_class = BusinessSerializer
+    # Owners must be able to manage their business and branches even after the subscription lapses.
+    subscription_exempt = True
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
@@ -69,6 +71,7 @@ class BusinessViewSet(ModelViewSet):
 class BranchViewSet(ModelViewSet):
     queryset = Branch.objects.select_related("business").all()
     serializer_class = BranchSerializer
+    subscription_exempt = True
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["business", "is_active"]
     search_fields = ["name", "code", "location"]
