@@ -6,6 +6,7 @@ import { PlusIcon, UsersIcon, SearchIcon, Loader2Icon } from "lucide-react";
 
 import { useWorkersStore } from "@/stores/workers-store";
 import { useCurrentUser } from "@/hooks/auth/use-current-user";
+import { useActiveBranch } from "@/contexts/branch-context";
 import { AddWorkerDialog } from "@/components/jobs/add-worker-dialog";
 import { Button } from "@/components/ui/button";
 import { WriteGuard } from "@/components/subscriptions/write-guard";
@@ -26,6 +27,8 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export default function WorkersPage() {
   const { data: currentUser } = useCurrentUser();
+  const { activeBranch } = useActiveBranch();
+  const branchId = activeBranch?.id ?? currentUser?.branch ?? null;
   const { workersList, workersListLoading, fetchWorkersList } = useWorkersStore();
 
   const [search, setSearch] = React.useState("");
@@ -57,7 +60,7 @@ export default function WorkersPage() {
       <PageHeader
         title="Workers"
         primaryAction={
-          currentUser?.branch
+          branchId
             ? { label: "New Worker", icon: PlusIcon, onClick: () => setCreateOpen(true) }
             : undefined
         }
@@ -88,7 +91,7 @@ export default function WorkersPage() {
             <p className="text-sm font-medium text-muted-foreground">
               {search ? "No workers match your search" : "No workers yet"}
             </p>
-            {!search && currentUser?.branch && (
+            {!search && branchId && (
               <>
                 <p className="text-xs text-muted-foreground mt-1 mb-4">
                   Add your first worker to get started.
@@ -180,12 +183,12 @@ export default function WorkersPage() {
         </div>
       )}
 
-      {currentUser?.branch && (
+      {branchId && (
         <AddWorkerDialog
           open={createOpen}
           onOpenChange={setCreateOpen}
           onCreated={handleWorkerCreated}
-          branchId={currentUser.branch}
+          branchId={branchId}
         />
       )}
     </div>

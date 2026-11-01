@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, filters, serializers, permissions
@@ -8,6 +9,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status
 
 from commons.mixins import BranchScopedMixin
+from commons.models import Branch
+from users.constants import UserRole
 from users.models import User
 from users.permissions import AnonCreateAndUpdateOwnerOnly
 from users.services.account_confirmation import send_account_confirmation_email
@@ -64,6 +67,27 @@ class UserViewSet(BranchScopedMixin, viewsets.ModelViewSet):
     def get_current_user(self, request):
         user_obj = User.objects.get(pk=request.user.id)
         return Response(UserSerializer(user_obj, context={"request": request}).data)
+
+    @extend_schema(
+        summary="Switch the current user's active branch",
+        request=inline_serializer("SwitchBranchRequest", fields={"branch": serializers.UUIDField()}),
+        responses=UserSerializer,
+    )
+    @action(detail=False, methods=["post"], url_path="switch-branch",
+            permission_classes=[permissions.IsAuthenticated], serializer_class=UserSerializer)
+    def switch_branch(self, request):
+        user = request.user
+        if not (user.is_superuser or user.role == UserRole.OWNER):
+            return Response({"detail": "Only owners can switch branches."}, status=status.HTTP_403_FORBIDDEN)
+        branch_id = request.data.get("branch")
+        branches = Branch.objects.all() if user.is_superuser else Branch.objects.filter(business=user.business_id)
+        try:
+            branch = branches.get(id=branch_id)
+        except (Branch.DoesNotExist, ValueError, DjangoValidationError):
+            return Response({"branch": "Branch not found."}, status=status.HTTP_400_BAD_REQUEST)
+        user.branch = branch
+        user.save(update_fields=["branch"])
+        return Response(UserSerializer(user, context={"request": request}).data)
 
     @extend_schema(
         summary="Confirm user account",

@@ -80,6 +80,9 @@ class BranchViewSet(ModelViewSet):
         user = self.request.user
         if not user.is_authenticated or user.is_superuser:
             return Branch.objects.select_related("business").all()
+        # Owners keep seeing every branch so they can switch, even with a default branch assigned.
+        if user.role == UserRole.OWNER:
+            return Branch.objects.select_related("business").filter(business=user.business_id)
         if user.branch_id:
             return Branch.objects.select_related("business").filter(id=user.branch_id)
         return Branch.objects.select_related("business").filter(business=user.business_id)
@@ -88,7 +91,13 @@ class BranchViewSet(ModelViewSet):
         user = self.request.user
         if not user.is_superuser and serializer.validated_data["business"].id != user.business_id:
             raise PermissionDenied("You can only add branches to your own business.")
-        serializer.save()
+        with transaction.atomic():
+            branch = serializer.save()
+            # The business's first branch (created during onboarding) becomes the owner's default branch.
+            is_first_branch = not Branch.objects.filter(business=branch.business).exclude(id=branch.id).exists()
+            if is_first_branch and user.role == UserRole.OWNER and user.branch_id is None:
+                user.branch = branch
+                user.save(update_fields=["branch"])
 
     @extend_schema(
         tags=["commons"],

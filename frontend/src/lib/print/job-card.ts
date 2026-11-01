@@ -6,6 +6,13 @@ export type JobCardData = Job | JobDetail;
 export const DEFAULT_RECEIPT_FOOTER = "Thank you for your business.";
 export const DEFAULT_JOB_CARD_FOOTER = "Present this card when collecting.";
 
+/** Vendor branding printed on every receipt and job card; not configurable. */
+const SYSTEM_BRANDING = [
+  "Carwash System By : Samfast Software",
+  "Tel: 0716651687",
+  "Get your own at biz.fastduka.co.ke",
+];
+
 export interface JobCardOptions {
   /** Used when `job.worker` is only an id (e.g. the create-job response). */
   workerName?: string;
@@ -164,6 +171,7 @@ function renderDocHtml(job: JobCardData, opts: JobCardOptions, kind: DocKind): s
   .num { text-align: right; white-space: nowrap; padding-left: 4px; }
   .total { font-size: 16px; font-weight: 800; }
   .notes { white-space: pre-wrap; }
+  .brand { font-size: 11px; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -204,6 +212,9 @@ function renderDocHtml(job: JobCardData, opts: JobCardOptions, kind: DocKind): s
 
   <hr />
   <div class="center muted notes">${escapeHtml(footer)}</div>
+
+  <hr />
+  <div class="center brand">${SYSTEM_BRANDING.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>
 
 </body>
 </html>`;

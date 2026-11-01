@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useCurrentUser } from "@/hooks/auth/use-current-user";
-import { useBranches, type Branch } from "@/hooks/commons/use-branches";
+import { useBranches, useSwitchBranch, type Branch } from "@/hooks/commons/use-branches";
 
 const STORAGE_KEY = "activeBranchId";
 
@@ -21,6 +21,8 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
   const { data: branches = [], isLoading: isBranchesLoading } = useBranches(user?.id);
   const isLoading = isUserLoading || isBranchesLoading;
   const [activeBranch, setActiveBranch] = useState<Branch | null>(null);
+  const { mutate: persistBranch } = useSwitchBranch();
+  const userBranchId = user?.branch ?? null;
 
   useEffect(() => {
     if (!branches.length) {
@@ -28,14 +30,23 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // The server-side branch decides where jobs go and what data is scoped to, so it wins.
     const savedId = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
-    const matched = savedId ? branches.find((b) => b.id === savedId) : null;
+    const preferredId = userBranchId ?? savedId;
+    const matched = preferredId ? branches.find((b) => b.id === preferredId) : null;
     setActiveBranch(matched ?? branches[0]);
-  }, [branches]);
+  }, [branches, userBranchId]);
 
   const switchBranch = (branch: Branch) => {
-    setActiveBranch(branch);
-    localStorage.setItem(STORAGE_KEY, branch.id);
+    const apply = () => {
+      setActiveBranch(branch);
+      localStorage.setItem(STORAGE_KEY, branch.id);
+    };
+    if (user?.role === "owner") {
+      persistBranch({ branch: branch.id }, { onSuccess: apply });
+    } else {
+      apply();
+    }
   };
 
   return (

@@ -1,8 +1,25 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, Car, CheckCircle2, Users, Wallet } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { FEATURE_LABELS, formatPrice } from "@/types/subscriptions/subscription";
+import { BarChart3, Car, CheckCircle2, Gift, Users, Wallet } from "lucide-react";
 import Link from "next/link";
+
+// USD figures are approximate (≈129 KES/USD).
+const PLANS: {
+  name: string;
+  kes: number;
+  usd: string;
+  period: string;
+  savings?: string;
+  recommended?: boolean;
+}[] = [
+  { name: "Daily", kes: 100, usd: "0.80", period: "day" },
+  { name: "Weekly", kes: 600, usd: "4.70", period: "week", savings: "Save 1 day" },
+  { name: "Monthly", kes: 2200, usd: "17", period: "month", savings: "Save 8 days", recommended: true },
+  { name: "Yearly", kes: 33000, usd: "255", period: "year", savings: "Save 1 month" },
+];
 
 
 export default function Home() {
@@ -111,6 +128,95 @@ export default function Home() {
                 Manage multiple branches from one account. Assign staff to specific branches or give owners full access.
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="scroll-mt-20 bg-muted/30 px-6 py-24">
+        <div className="mx-auto max-w-6xl">
+          <div className="mx-auto mb-12 max-w-2xl text-center">
+            <Badge variant="secondary" className="mb-4 rounded-full">Pricing</Badge>
+            <h2 className="mb-4 text-3xl font-bold md:text-4xl">
+              Simple, flexible pricing
+            </h2>
+            <p className="text-muted-foreground">
+              Start with a 5-day free trial. Pay daily, weekly, monthly or yearly — every plan
+              includes all features.
+            </p>
+          </div>
+
+          <Card className="mb-8 rounded-3xl border-dashed border-primary/40 bg-background shadow-sm">
+            <CardContent className="flex flex-col items-center justify-between gap-4 py-2 text-center sm:flex-row sm:text-left">
+              <div className="flex items-center gap-4">
+                <Gift className="h-9 w-9 shrink-0 text-primary" />
+                <div>
+                  <p className="text-lg font-semibold">5-day free trial</p>
+                  <p className="text-sm text-muted-foreground">
+                    Full access to every feature. No payment required.
+                  </p>
+                </div>
+              </div>
+              <Button asChild className="rounded-full px-8">
+                <Link href="/register">Get started free</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {PLANS.map((plan) => (
+              <Card
+                key={plan.name}
+                className={cn(
+                  "relative flex flex-col rounded-3xl bg-background shadow-sm transition hover:-translate-y-1 hover:shadow-md",
+                  plan.recommended
+                    ? "border-primary shadow-lg ring-2 ring-primary lg:scale-105"
+                    : "border-primary/20",
+                )}
+              >
+                {plan.recommended && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3">
+                    Recommended
+                  </Badge>
+                )}
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle>{plan.name}</CardTitle>
+                    {plan.savings && (
+                      <Badge variant="secondary" className="rounded-full">
+                        {plan.savings}
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="flex flex-1 flex-col">
+                  <p className="text-3xl font-black tracking-tight">
+                    {formatPrice(plan.kes)}
+                    <span className="text-base font-normal text-muted-foreground"> / {plan.period}</span>
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">≈ USD {plan.usd}</p>
+                  <Button
+                    asChild
+                    variant={plan.recommended ? "default" : "outline"}
+                    className="mt-6 w-full rounded-full"
+                  >
+                    <Link href="/register">Start free trial</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="mt-12 text-center">
+            <p className="mb-4 text-sm font-medium text-muted-foreground">All plans include</p>
+            <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
+              {Object.values(FEATURE_LABELS).map((label) => (
+                <li key={label} className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  {label}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>

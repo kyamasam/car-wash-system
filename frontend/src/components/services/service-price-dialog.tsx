@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useServicesStore } from "@/stores/services-store";
-import { SIZE_UNIT_LABELS } from "@/types/services/service";
 import type {
   CommissionType,
   ServiceCategory,
@@ -28,6 +27,7 @@ import type {
   ServiceUnit,
   SizeUnit,
 } from "@/types/services/service";
+import { SIZE_UNIT_LABELS } from "@/types/services/service";
 
 interface ServicePriceDialogProps {
   open: boolean;
@@ -58,7 +58,7 @@ export function ServicePriceDialog({
   const [sizeLabel, setSizeLabel] = React.useState("");
   const [priceValue, setPriceValue] = React.useState("");
   const [commissionValue, setCommissionValue] = React.useState("");
-  const [commissionType, setCommissionType] = React.useState<CommissionType>("fixed");
+  const [commissionType, setCommissionType] = React.useState<CommissionType>("percentage");
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -68,7 +68,7 @@ export function ServicePriceDialog({
       setSizeLabel(price?.size_label ?? "");
       setPriceValue(price?.price ?? "");
       setCommissionValue(price?.commission_value ?? "");
-      setCommissionType(price?.commission_type ?? "fixed");
+      setCommissionType(price?.commission_type ?? "percentage");
       setError(null);
     }
   }, [open, price]);
@@ -170,8 +170,8 @@ export function ServicePriceDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fixed">Amount</SelectItem>
                   <SelectItem value="percentage">Percentage</SelectItem>
+                  <SelectItem value="fixed">Amount</SelectItem>
                 </SelectContent>
               </Select>
             </div>
