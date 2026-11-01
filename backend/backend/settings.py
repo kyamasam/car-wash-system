@@ -263,7 +263,7 @@ LOGGING = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=4),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=4),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
 }
 
