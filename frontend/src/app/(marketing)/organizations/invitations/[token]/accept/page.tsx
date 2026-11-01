@@ -52,7 +52,7 @@ export default function InvitationPage() {
                     {!result ? (
                         <div className="space-y-4">
                             <p className="text-muted-foreground">
-                                You have been invited to join an organization on <strong>SF Networks</strong>.
+                                You have been invited to join an organization on <strong>Carwash Manager</strong>.
                                 Would you like to accept this invitation?
                             </p>
                         </div>

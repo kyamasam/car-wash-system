@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { WriteGuard } from "@/components/subscriptions/write-guard";
 import { cn } from "@/lib/utils";
 import { ArrowLeftIcon, type LucideIcon } from "lucide-react";
 import Link from "next/link";
@@ -42,11 +43,17 @@ export function PageHeader({ title, primaryAction, actions, back, className }: P
         <div className="flex items-center gap-2 shrink-0 max-md:**:data-[slot=button]:h-8 max-md:**:data-[slot=button]:px-3">
           {actions}
           {primaryAction && (
-            <ActionButton action={primaryAction} className="hidden md:inline-flex" />
+            <WriteGuard className="hidden md:inline-flex">
+              <ActionButton action={primaryAction} className="hidden md:inline-flex" />
+            </WriteGuard>
           )}
         </div>
       )}
-      {primaryAction && <Fab action={primaryAction} />}
+      {primaryAction && (
+        <WriteGuard>
+          <Fab action={primaryAction} />
+        </WriteGuard>
+      )}
     </div>
   );
 }

@@ -16,6 +16,7 @@ import {
 
 import { useJobsStore } from "@/stores/jobs-store";
 import { Button } from "@/components/ui/button";
+import { WriteGuard } from "@/components/subscriptions/write-guard";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -445,12 +446,14 @@ export default function JobsPage() {
               : "Create your first job to get started."}
           </p>
           {!anyFilterActive && (
-            <Link href="/dashboard/jobs/new">
-              <Button size="sm">
-                <PlusIcon />
-                Create Job
-              </Button>
-            </Link>
+            <WriteGuard>
+              <Link href="/dashboard/jobs/new">
+                <Button size="sm">
+                  <PlusIcon />
+                  Create Job
+                </Button>
+              </Link>
+            </WriteGuard>
           )}
         </div>
       ) : viewMode === "cards" ? (

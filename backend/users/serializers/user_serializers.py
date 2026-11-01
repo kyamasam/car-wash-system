@@ -92,6 +92,7 @@ class UserSerializer(serializers.ModelSerializer):
             "groups", "groups_objects", "staff_number", "is_admin",
             "email", "role", "business", "branch", "email_verified",
         ]
+        read_only_fields = ["business", "branch", "role", "email_verified"]
 
     def validate_phone_number(self, value):
         if not value:

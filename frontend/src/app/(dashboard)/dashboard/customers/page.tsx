@@ -8,6 +8,7 @@ import { useCustomersStore } from "@/stores/customers-store";
 import { useDebounce } from "@/hooks/use-debounce";
 import { AddCustomerDialog } from "@/components/jobs/add-customer-dialog";
 import { Button } from "@/components/ui/button";
+import { WriteGuard } from "@/components/subscriptions/write-guard";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Customer } from "@/types/customers/customer";
@@ -77,10 +78,12 @@ export default function CustomersPage() {
                 <p className="text-xs text-muted-foreground mt-1 mb-4">
                   Add your first customer to get started.
                 </p>
-                <Button size="sm" onClick={() => setCreateOpen(true)}>
-                  <PlusIcon />
-                  Add Customer
-                </Button>
+                <WriteGuard>
+                  <Button size="sm" onClick={() => setCreateOpen(true)}>
+                    <PlusIcon />
+                    Add Customer
+                  </Button>
+                </WriteGuard>
               </>
             )}
           </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { SubscriptionBanner } from "@/components/subscriptions/subscription-banner";
+import { SubscriptionGuard } from "@/components/subscriptions/subscription-guard";
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 import { DashboardTopBar } from "./dashboard-top-bar";
@@ -109,6 +111,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               isSidebarOpen={isSidebarOpen}
             />
           </div>
+
+          <SubscriptionBanner />
+          <SubscriptionGuard />
 
           <main className="flex-1 px-4 pt-3 pb-4 md:p-2 overflow-y-auto max-md:has-data-fab:pb-24">
             {children}

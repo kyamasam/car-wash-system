@@ -6,7 +6,7 @@ export default function ResetPasswordPage() {
     <AuthHeroLayout
       heading="Reset your password"
       subheading="Enter a new password for your account."
-      imageSrc="/images/servers.webp"
+      imageSrc="/images/carwash.jpg"
     >
       <div className="w-full max-w-md rounded-xl border bg-card p-8 shadow-sm">
         <div className="mb-6 space-y-1">

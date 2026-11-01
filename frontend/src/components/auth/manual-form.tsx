@@ -70,7 +70,7 @@ export const ManualForm = ({
           <button
             type="button"
             onClick={onForgotPassword}
-            className="text-xs text-purple-600 hover:text-purple-700 hover:underline"
+            className="text-xs text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 hover:underline"
           >
             Forgot password?
           </button>

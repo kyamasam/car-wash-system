@@ -8,9 +8,9 @@ export const metadata = {
 export default function RegisterPage() {
   return (
     <AuthHeroLayout
-      heading="Start hosting in minutes."
-      subheading="Create your account and deploy your first VPS instance. Pay in KES via M-Pesa."
-      imageSrc="/images/servers.webp"
+      heading="Run your car wash with ease."
+      subheading="Create your account to manage jobs, workers, customers and M-Pesa payments in one place."
+      imageSrc="/images/carwash.jpg"
     >
       <RegisterCard className="w-full max-w-md" />
     </AuthHeroLayout>

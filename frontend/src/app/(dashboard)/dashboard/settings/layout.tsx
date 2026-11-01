@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 
 const TABS = [
   { label: "Business", href: "/dashboard/settings/business" },
+  { label: "Subscription", href: "/dashboard/settings/subscription" },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
