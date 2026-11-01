@@ -1,7 +1,7 @@
 from datetime import timedelta
 import os
 from pathlib import Path
-import os
+import sys
 from dotenv import load_dotenv
 load_dotenv()  # loads the configs from .env
 
@@ -208,6 +208,11 @@ if "<" not in email_address: # type: ignore
 else:
     DEFAULT_FROM_EMAIL = email_address
 
+# Platform admins emailed on new business sign-ups and subscription payments.
+ADMIN_NOTIFICATION_EMAILS = [
+    e.strip() for e in os.getenv('ADMIN_NOTIFICATION_EMAILS', 'samfastone@gmail.com').split(',') if e.strip()
+]
+
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
@@ -285,6 +290,8 @@ CELERY_RESULT_BACKEND = 'django-db'
 CELERY_RESULT_EXTENDED = True
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TASK_DEFAULT_QUEUE = os.getenv("CELERY_TASK_DEFAULT_QUEUE", "sf_networks")
+# Run tasks inline under the test runner so tests don't need a broker.
+CELERY_TASK_ALWAYS_EAGER = 'test' in sys.argv
 
 from celery.schedules import crontab
 
@@ -298,7 +305,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 FRONT_END_LINK = os.getenv('FRONT_END_LINK')
 
-SUBSCRIPTION_TRIAL_DAYS = int(os.getenv('SUBSCRIPTION_TRIAL_DAYS', '14'))
+SUBSCRIPTION_TRIAL_DAYS = int(os.getenv('SUBSCRIPTION_TRIAL_DAYS', '5'))
 
 FASTDUKA_API_BASE = os.getenv('FASTDUKA_API_BASE', 'https://api.fastduka.co.ke/api')
 FASTDUKA_API_KEY = os.getenv('FASTDUKA_API_KEY', '')

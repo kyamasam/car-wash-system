@@ -2,7 +2,8 @@ from datetime import timedelta
 from decimal import Decimal
 from unittest import mock
 
-from django.test import TestCase
+from django.core import mail
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -175,3 +176,34 @@ class PaymentTests(SubscriptionTestBase):
                                             role=UserRole.OWNER, phone_number="700000000")
         self.client.force_authenticate(stranger)
         self.assertEqual(self.client.post(f"/api/subscriptions/payments/{payment_id}/confirm/").status_code, 404)
+
+
+@override_settings(ADMIN_NOTIFICATION_EMAILS=["admin@example.com"])
+class PaymentAdminNotificationTests(SubscriptionTestBase):
+    initiate = PaymentTests.initiate
+
+    def confirm(self, payment_id, amount="1000.00"):
+        result = {"status": SubscriptionPaymentStatus.SUCCEEDED, "receipt": "SJK123",
+                  "raw": {"transaction_status": "processed", "amount": amount}}
+        with mock.patch(f"{FASTDUKA}.get_transaction", return_value=result), \
+                self.captureOnCommitCallbacks(execute=True):
+            self.client.post(f"/api/subscriptions/payments/{payment_id}/confirm/")
+
+    def admin_emails(self):
+        return [m for m in mail.outbox if m.subject.startswith("Subscription payment")]
+
+    def test_success_emails_admin_once(self):
+        payment_id = self.initiate().data["id"]
+        self.confirm(payment_id)
+        self.confirm(payment_id)
+        emails = self.admin_emails()
+        self.assertEqual(len(emails), 1)
+        self.assertEqual(emails[0].to, ["admin@example.com"])
+        self.assertIn("Shine", emails[0].subject)
+        self.assertIn("KES 1,000.00", emails[0].body)
+        self.assertIn("owner@example.com", emails[0].body)
+        self.assertIn("SJK123", emails[0].body)
+
+    def test_amount_mismatch_does_not_email(self):
+        self.confirm(self.initiate().data["id"], amount="10")
+        self.assertEqual(self.admin_emails(), [])

@@ -9,6 +9,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from commons.models import Business
+from commons.tasks import notify_subscription_paid
 from subscriptions.constants import (
     BillingPeriod,
     SubscriptionPaymentMethod,
@@ -162,6 +163,7 @@ def refresh_payment(payment):
                 payment.failure_reason = f"Amount mismatch: expected {payment.amount}, got {paid_amount}"
             elif not Subscription.objects.filter(payment=payment).exists():
                 grant_days(payment.business_id, payment.package, payment.period, payment.days, payment=payment)
+                transaction.on_commit(lambda: notify_subscription_paid.delay(payment.pk))
         elif payment.status == SubscriptionPaymentStatus.FAILED:
             payment.failure_reason = (result["raw"] or {}).get("transaction_status") or "failed"
 

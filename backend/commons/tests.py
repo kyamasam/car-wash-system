@@ -1,3 +1,5 @@
+from django.core import mail
+from django.test import override_settings
 from rest_framework.test import APITestCase
 
 from commons.models import Branch, Business
@@ -104,3 +106,22 @@ class OwnerDefaultBranchTests(APITestCase):
         self.client.force_authenticate(attendant)
         response = self.client.post(SWITCH_BRANCH_URL, {"branch": str(branch.id)})
         self.assertEqual(response.status_code, 403)
+
+
+@override_settings(ADMIN_NOTIFICATION_EMAILS=["admin@example.com"])
+class NewBusinessAdminNotificationTests(APITestCase):
+    def test_creating_business_emails_admin(self):
+        user = User.objects.create_user(
+            "new@a.com", "pw", first_name="Jane", last_name="Doe", phone_code="+254", phone_number="700000009",
+        )
+        self.client.force_authenticate(user)
+        with self.captureOnCommitCallbacks(execute=True):
+            res = self.client.post("/api/commons/businesses/", {"name": "Sparkle Wash"})
+        self.assertEqual(res.status_code, 201, res.content)
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.to, ["admin@example.com"])
+        self.assertEqual(email.subject, "New business: Sparkle Wash")
+        self.assertIn("Jane Doe", email.body)
+        self.assertIn("new@a.com", email.body)
+        self.assertIn("+254700000009", email.body)
